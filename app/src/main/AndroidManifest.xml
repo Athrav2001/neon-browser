@@ -58,6 +58,8 @@
                 android:name="com.neo.downloader.browser.BrowserIconInLauncher"
                 android:enabled="false"
                 android:exported="true"
+                android:icon="@mipmap/ic_browser_launcher"
+                android:roundIcon="@mipmap/ic_browser_launcher_round"
                 android:targetActivity=".pages.browser.BrowserActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
