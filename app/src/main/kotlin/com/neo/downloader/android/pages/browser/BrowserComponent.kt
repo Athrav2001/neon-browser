@@ -246,6 +246,10 @@ class BrowserComponent(
         persistSessionSnapshot()
     }
 
+    fun getTabById(tabId: NDMBrowserTabId): NDMBrowserTab? {
+        return tabs.value.tabs.find { it.tabId == tabId }
+    }
+
     fun onTabPageFinished(
         tabId: NDMBrowserTabId?,
         url: String?,

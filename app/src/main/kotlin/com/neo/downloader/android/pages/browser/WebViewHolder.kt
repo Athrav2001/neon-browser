@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Message
+import android.util.Log
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
@@ -15,6 +16,7 @@ import com.neo.downloader.android.ui.widget.WebViewNavigator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import org.json.JSONArray
 import java.util.UUID
 
 class WebViewRegistry(
@@ -166,6 +168,16 @@ class NDMWebViewClient(
                         page = view?.originalUrl ?: view?.url
                     )
                 )
+                val tab = (view as? NDMWebView)?.tabId?.let { browserComponent.getTabById(it) }
+                val requestUrl = request.url?.toString()
+                if (tab != null && requestUrl != null) {
+                    requestInterceptor.onDetectedLinks(
+                        urls = listOf(requestUrl),
+                        userAgent = request.requestHeaders["User-Agent"],
+                        page = view?.originalUrl ?: view?.url,
+                        tab = tab,
+                    )
+                }
             }
         }
         return super.shouldInterceptRequest(view, request)
@@ -219,11 +231,135 @@ class NDMWebViewClient(
 
     override fun onPageFinished(view: WebView, url: String?) {
         super.onPageFinished(view, url)
+        injectUniversalGrabber(view)
         browserComponent.onTabPageFinished(
             tabId = (view as? NDMWebView)?.tabId,
             url = view.url ?: url,
             title = view.title,
         )
+    }
+
+    private fun injectUniversalGrabber(view: WebView) {
+        val tab = (view as? NDMWebView)?.tabId?.let { browserComponent.getTabById(it) } ?: return
+        val userAgent = runCatching { view.settings.userAgentString }.getOrNull()
+        val page = view.url ?: view.originalUrl
+        view.evaluateJavascript(UNIVERSAL_GRABBER_SCRIPT) { jsResult ->
+            val urls = parseUrlsFromJsResult(jsResult)
+            if (urls.isEmpty()) {
+                return@evaluateJavascript
+            }
+            scope.launch(Dispatchers.Main) {
+                requestInterceptor.onDetectedLinks(
+                    urls = urls,
+                    userAgent = userAgent,
+                    page = page,
+                    tab = tab,
+                )
+            }
+        }
+    }
+
+    private fun parseUrlsFromJsResult(jsResult: String?): List<String> {
+        if (jsResult.isNullOrBlank() || jsResult == "null") {
+            return emptyList()
+        }
+        return runCatching {
+            val json = JSONArray(jsResult)
+            buildList {
+                for (i in 0 until json.length()) {
+                    val item = json.optJSONObject(i) ?: continue
+                    val url = item.optString("url").takeIf { it.isNotBlank() } ?: continue
+                    add(url)
+                }
+            }.distinct()
+        }.onFailure {
+            Log.d("BrowserGrabber", "Failed to parse page scan payload", it)
+        }.getOrDefault(emptyList())
+    }
+
+    companion object {
+        private const val UNIVERSAL_GRABBER_SCRIPT = """
+            (function() {
+              const foundFiles = [];
+              const usefulExts = new Set([
+                'mp4','mkv','avi','mov','wmv','webm',
+                'mp3','m4a','wav','flac','aac','ogg',
+                'pdf','epub','doc','docx','xls','xlsx','ppt','pptx',
+                'zip','rar','7z','tar','gz','bz2',
+                'apk','xapk','apkm',
+                'm3u8','mpd'
+              ]);
+              const blockedExts = new Set([
+                'tmp','temp','bin','log',
+                'jpg','jpeg','png','gif','webp','svg','ico',
+                'css','js','map','txt','json','xml',
+                'html','htm','php','asp','aspx'
+              ]);
+
+              function normalizeUrl(value) {
+                if (!value || value.startsWith('javascript:') || value.startsWith('blob:') || value.startsWith('data:')) {
+                  return null;
+                }
+                try {
+                  return new URL(value, location.href).href;
+                } catch (_) {
+                  return null;
+                }
+              }
+
+              function extFrom(url) {
+                const clean = url.split('#')[0].split('?')[0].toLowerCase();
+                const file = clean.substring(clean.lastIndexOf('/') + 1);
+                if (!file || file.indexOf('.') === -1) return '';
+                return file.substring(file.lastIndexOf('.') + 1);
+              }
+
+              function isUseful(url) {
+                const lower = url.toLowerCase();
+                if (lower.includes('.m3u8') || lower.includes('.mpd')) return true;
+                const ext = extFrom(url);
+                if (!ext) return false;
+                if (blockedExts.has(ext)) return false;
+                return usefulExts.has(ext);
+              }
+
+              function addFile(rawUrl, nameHint) {
+                const url = normalizeUrl(rawUrl);
+                if (!url || !isUseful(url)) return;
+                if (foundFiles.some(function(f){ return f.url === url; })) return;
+                foundFiles.push({
+                  url: url,
+                  name: nameHint || url.split('/').pop().split('?')[0] || 'Unknown'
+                });
+              }
+
+              document.querySelectorAll('a[href]').forEach(function(a) {
+                addFile(a.getAttribute('href'), (a.textContent || '').trim());
+                addFile(a.getAttribute('data-href'), (a.textContent || '').trim());
+              });
+
+              document.querySelectorAll('video, audio, source').forEach(function(media) {
+                addFile(media.getAttribute('src'), 'Media Player File');
+                addFile(media.getAttribute('data-src'), 'Media Player File');
+              });
+
+              document.querySelectorAll('[srcset]').forEach(function(el) {
+                const srcset = el.getAttribute('srcset') || '';
+                srcset.split(',').forEach(function(part) {
+                  const candidate = part.trim().split(/\s+/)[0];
+                  if (candidate) addFile(candidate, 'Srcset File');
+                });
+              });
+
+              document.querySelectorAll('script').forEach(function(s) {
+                const text = s.textContent || '';
+                const matches = text.match(/https?:\/\/[^\s"'<>]+/gi) || [];
+                matches.forEach(function(u) { addFile(u, 'Script Link'); });
+              });
+
+              return foundFiles;
+            })();
+        """
     }
 }
 

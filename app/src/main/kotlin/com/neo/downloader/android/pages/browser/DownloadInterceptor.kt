@@ -8,6 +8,7 @@ import ir.amirab.util.HttpUrlUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 typealias NDMWebRequestId = String
 
@@ -28,6 +29,7 @@ class DownloadInterceptor(
     private val onNewDownload: (newDownloads: List<AddDownloadCredentialsInUiProps>) -> Unit,
 ) : RequestInterceptor {
     private val requests = mutableMapOf<String, NDMWebRequest>()
+    private val recentlyHandledUrls = mutableMapOf<String, Long>()
 
     fun onDownloadStart(
         url: String?,
@@ -41,12 +43,18 @@ class DownloadInterceptor(
         if (!HttpUrlUtils.isValidUrl(url)) {
             return
         }
+        if (!isUsefulDownloadUrl(url)) {
+            return
+        }
         val webRequest = getWebRequestOrDefault(
             url = url,
             userAgent = userAgent,
             page = page,
             webViewState = tab.tabState,
         )
+        if (!markHandled(webRequest.url)) {
+            return
+        }
         onNewDownload(
             listOf(
                 AddDownloadCredentialsInUiProps(
@@ -59,6 +67,39 @@ class DownloadInterceptor(
                 )
             )
         )
+    }
+
+    fun onDetectedLinks(
+        urls: List<String>,
+        userAgent: String?,
+        page: String?,
+        tab: NDMBrowserTab,
+    ) {
+        val downloads = urls
+            .filter(::isUsefulDownloadUrl)
+            .map { url ->
+                getWebRequestOrDefault(
+                    url = url,
+                    userAgent = userAgent,
+                    page = page,
+                    webViewState = tab.tabState,
+                )
+            }
+            .filter { markHandled(it.url) }
+            .map { webRequest ->
+                AddDownloadCredentialsInUiProps(
+                    HttpDownloadCredentials(
+                        link = webRequest.url,
+                        headers = webRequest.headers,
+                        downloadPage = webRequest.page,
+                    ),
+                    AddDownloadCredentialsInUiProps.Configs()
+                )
+            }
+
+        if (downloads.isNotEmpty()) {
+            onNewDownload(downloads)
+        }
     }
 
     override fun interceptRequest(
@@ -131,7 +172,60 @@ class DownloadInterceptor(
         return state.lastLoadedUrl
     }
 
+    private fun markHandled(url: String): Boolean {
+        val now = System.currentTimeMillis()
+        val previous = recentlyHandledUrls[url]
+        if (previous != null && now - previous < HANDLED_COOLDOWN_MILLIS) {
+            return false
+        }
+        recentlyHandledUrls[url] = now
+        scope.launch {
+            delay(HANDLED_COOLDOWN_MILLIS)
+            recentlyHandledUrls.remove(url)
+        }
+        return true
+    }
+
+    private fun isUsefulDownloadUrl(url: String): Boolean {
+        if (!HttpUrlUtils.isValidUrl(url)) {
+            return false
+        }
+        val path = url
+            .substringBefore('#')
+            .substringBefore('?')
+            .lowercase(Locale.US)
+        val fileName = path.substringAfterLast('/', "")
+        val ext = fileName.substringAfterLast('.', "")
+
+        // keep HLS/DASH playlists even if URL is non-standard.
+        if (path.contains(".m3u8") || path.contains(".mpd")) {
+            return true
+        }
+        if (ext.isBlank()) {
+            return false
+        }
+        if (ext in BLOCKED_EXTENSIONS) {
+            return false
+        }
+        return ext in USEFUL_EXTENSIONS
+    }
+
     companion object {
         private const val REMOVE_REQUESTS_DELAY = 20_000L
+        private const val HANDLED_COOLDOWN_MILLIS = 12_000L
+        private val USEFUL_EXTENSIONS = setOf(
+            "mp4", "mkv", "avi", "mov", "wmv", "webm",
+            "mp3", "m4a", "wav", "flac", "aac", "ogg",
+            "pdf", "epub", "doc", "docx", "xls", "xlsx", "ppt", "pptx",
+            "zip", "rar", "7z", "tar", "gz", "bz2",
+            "apk", "xapk", "apkm",
+            "m3u8", "mpd"
+        )
+        private val BLOCKED_EXTENSIONS = setOf(
+            "tmp", "temp", "bin", "log",
+            "jpg", "jpeg", "png", "gif", "webp", "svg", "ico",
+            "css", "js", "map", "txt", "json", "xml",
+            "html", "htm", "php", "asp", "aspx"
+        )
     }
 }
