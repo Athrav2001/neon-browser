@@ -2,13 +2,13 @@ package com.neo.downloader.shared.ui.widget
 
 import com.neo.downloader.shared.util.ui.widget.MyIcon
 import com.neo.downloader.shared.util.ui.icon.MyIcons
+import com.neo.downloader.shared.util.div
 import com.neo.downloader.shared.util.ui.myColors
 import com.neo.downloader.shared.util.ui.theme.myTextSizes
 import com.neo.downloader.shared.util.ui.WithContentAlpha
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier

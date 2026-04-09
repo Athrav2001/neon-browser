@@ -27,6 +27,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.neo.downloader.shared.util.ui.theme.myShapes
 import com.neo.downloader.shared.util.ui.theme.mySpacings
+import ir.amirab.util.ifThen
 
 @Composable
 fun ActionButton(
@@ -48,14 +49,15 @@ fun ActionButton(
     val isFocused by interactionSource.collectIsFocusedAsState()
     val shape = myShapes.defaultRounded
     val borderColor = if (isFocused) focusedBorderColor else borderColor
+    val glowColor = if (myColors.isLight) myColors.onBackground / 0.06f else myColors.glowColor
     Row(
         modifier
             .ifThen(enabled) {
                 shadow(
                     elevation = if (isFocused) 10.dp else 4.dp,
                     shape = shape,
-                    ambientColor = if (myColors.isLight) myColors.onBackground / 0.06f else myColors.glowColor,
-                    spotColor = if (myColors.isLight) myColors.onBackground / 0.06f else myColors.glowColor,
+                    ambientColor = glowColor,
+                    spotColor = glowColor,
                 )
             }
             .heightIn(mySpacings.thumbSize)
