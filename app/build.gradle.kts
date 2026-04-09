@@ -36,7 +36,7 @@ android {
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
-            resValue("string", "app_short_name", "Neo - Debug")
+            resValue("string", "app_short_name", "NEO")
         }
     }
     buildFeatures {
