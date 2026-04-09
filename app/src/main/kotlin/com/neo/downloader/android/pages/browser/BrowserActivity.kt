@@ -46,6 +46,10 @@ class BrowserActivity : NDMActivity() {
                     is BrowserComponent.Effects.ShareText -> {
                         AndroidIntentUtils.shareText(this, it.text)
                     }
+
+                    BrowserComponent.Effects.CloseCurrentPage -> {
+                        finish()
+                    }
                 }
             }
             BrowserPage(component)

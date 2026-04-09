@@ -1,7 +1,7 @@
 package com.neo.browser.logic.search
 
 class NeoSearchEngineProvider(
-    private var selectedEngine: NeoSearchEngine = NeoSearchEngine.DUCK_DUCK_GO,
+    private var selectedEngine: NeoSearchEngine = NeoSearchEngine.GOOGLE,
     private var customSearchTemplate: String? = null,
 ) {
     fun selected(): NeoSearchEngine = selectedEngine
@@ -18,4 +18,3 @@ class NeoSearchEngineProvider(
         return selectedEngine.createSearchUrl(query, customSearchTemplate)
     }
 }
-

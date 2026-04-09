@@ -9,6 +9,7 @@ import com.neo.browser.logic.session.NeoBrowserSessionTab
 import com.neo.browser.logic.search.NeoSearchEngine
 import com.neo.browser.logic.search.NeoSearchEngineProvider
 import com.neo.browser.logic.url.NeoBrowserUrlResolver
+import com.neo.downloader.android.ui.MainActivity
 import com.neo.downloader.android.pages.add.multiple.AddMultiDownloadActivity
 import com.neo.downloader.android.pages.add.single.AddSingleDownloadActivity
 import com.neo.downloader.android.pages.browser.bookmark.EditBookmarkState
@@ -73,7 +74,7 @@ class BrowserComponent(
         }
     )
     private val searchEngineProvider = NeoSearchEngineProvider(
-        selectedEngine = NeoSearchEngine.DUCK_DUCK_GO
+        selectedEngine = NeoSearchEngine.GOOGLE
     )
     private val urlResolver = NeoBrowserUrlResolver(searchEngineProvider)
     private val historyManager = NeoBrowserHistoryManager(
@@ -263,6 +264,17 @@ class BrowserComponent(
         persistSessionSnapshot()
     }
 
+    fun goHome() {
+        sendEffect(
+            Effects.StartActivity(
+                Intent(context, MainActivity::class.java).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                }
+            )
+        )
+        sendEffect(Effects.CloseCurrentPage)
+    }
+
     fun createNewUrlFor(urlOrSearch: String): String {
         return urlResolver.resolve(urlOrSearch)
     }
@@ -433,6 +445,8 @@ class BrowserComponent(
         data class ShareText(
             val text: String,
         ) : Effects
+
+        data object CloseCurrentPage : Effects
     }
 }
 

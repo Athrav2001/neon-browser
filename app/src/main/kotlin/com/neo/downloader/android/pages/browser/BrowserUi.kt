@@ -117,17 +117,14 @@ fun BrowserPage(
         header = {
             PageHeader(
                 leadingIcon = {
-                    MyIcon(
-                        MyIcons.earth,
-                        null,
-                        Modifier.size(mySpacings.iconSize)
-                    )
+                    TransparentIconActionButton(
+                        icon = MyIcons.appIcon,
+                        contentDescription = "Home".asStringSource(),
+                    ) {
+                        browserComponent.goHome()
+                    }
                 },
-                headerTitle = {
-                    PageTitle(
-                        myStringResource(Res.string.browser)
-                    )
-                },
+                headerTitle = {},
                 modifier = Modifier
                     .statusBarsPadding()
                     .padding(horizontal = mySpacings.largeSpace),
