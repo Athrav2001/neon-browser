@@ -67,7 +67,7 @@ fun BottomNavigation(
     val isShowingAddMenu by component.isAddMenuShowing.collectAsState()
     Row(
         modifier
-            .padding(16.dp),
+            .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         val shape = myShapes.defaultRounded
@@ -75,9 +75,18 @@ fun BottomNavigation(
             Modifier
                 .weight(1f)
                 .height(IntrinsicSize.Max)
-                .shadow(4.dp, shape)
+                .shadow(
+                    elevation = if (myColors.isLight) 6.dp else 14.dp,
+                    shape = shape,
+                    ambientColor = if (myColors.isLight) myColors.onBackground / 0.06f else myColors.glowColor,
+                    spotColor = if (myColors.isLight) myColors.onBackground / 0.06f else myColors.glowColor,
+                )
                 .clip(shape)
-                .border(1.dp, myColors.onSurface / 0.1f, shape)
+                .border(
+                    1.dp,
+                    if (myColors.isLight) myColors.onSurface / 0.10f else myColors.primary / 0.35f,
+                    shape
+                )
                 .background(myColors.surface)
         ) {
             AnimatedContent(
@@ -110,7 +119,7 @@ fun BottomNavigation(
             shouldShowMainButton
         ) {
             Row {
-                Spacer(Modifier.width(8.dp))
+                Spacer(Modifier.width(10.dp))
                 Column {
                     RenderAddMenu(component)
                     MainBottonNavigationItem(

@@ -12,19 +12,14 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import com.neo.downloader.resources.Res
 import com.neo.downloader.shared.ui.widget.Text
 import com.neo.downloader.shared.util.FileIconProvider
-import com.neo.downloader.shared.util.div
 import com.neo.downloader.shared.util.ui.WithContentAlpha
 import com.neo.downloader.shared.util.ui.myColors
 import ir.amirab.downloader.monitor.IDownloadItemState
 import ir.amirab.util.compose.resources.myStringResource
-import ir.amirab.util.ifThen
 
 
 @Composable
@@ -54,7 +49,6 @@ fun DownloadList(
     ) {
         changeAllSelection(false)
     }
-    val dividerColor = myColors.onBackground / 0.5f
     Box {
         LazyColumn(
             state = lazyListState,
@@ -64,10 +58,14 @@ fun DownloadList(
             itemsIndexed(
                 items = downloadList,
                 key = { _, item -> item.id }
-            ) { index, item ->
-                val isFirstItem = index == 0
+            ) { _, item ->
                 Column(
-                    modifier = Modifier.animateItem()
+                    modifier = Modifier
+                        .animateItem()
+                        .padding(
+                            horizontal = 10.dp,
+                            vertical = 6.dp,
+                        )
                 ) {
                     RenderDownloadItem(
                         downloadItem = item,
@@ -89,21 +87,7 @@ fun DownloadList(
                             onItemSelectionChange(item.id, !wasInSelections)
                         },
                         fileIconProvider = fileIconProvider,
-                        modifier = Modifier.ifThen(!isFirstItem) {
-                            drawBehind {
-                                drawLine(
-                                    brush = Brush.horizontalGradient(
-                                        listOf(
-                                            Color.Transparent,
-                                            dividerColor,
-                                            Color.Transparent,
-                                        )
-                                    ),
-                                    start = Offset.Zero,
-                                    end = Offset(size.width, 0f)
-                                )
-                            }
-                        },
+                        modifier = Modifier,
                     )
                 }
             }

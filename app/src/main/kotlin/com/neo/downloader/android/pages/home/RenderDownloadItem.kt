@@ -37,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.BlurredEdgeTreatment.Companion.Unbounded
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -94,6 +95,7 @@ fun RenderDownloadItem(
     fileIconProvider: FileIconProvider,
     modifier: Modifier
 ) {
+    val shape = myShapes.defaultRounded
     Row(
         modifier
     ) {
@@ -102,20 +104,37 @@ fun RenderDownloadItem(
         ) {
             Column(
                 Modifier
+                    .shadow(
+                        elevation = if (checked == true) 12.dp else 6.dp,
+                        shape = shape,
+                        ambientColor = if (myColors.isLight) myColors.onBackground / 0.06f else myColors.glowColor,
+                        spotColor = if (myColors.isLight) myColors.onBackground / 0.06f else myColors.glowColor,
+                    )
+                    .clip(shape)
                     .weight(1f)
+                    .border(
+                        1.dp,
+                        if (checked == true) {
+                            myColors.primary / 0.55f
+                        } else {
+                            myColors.onSurface / 0.10f
+                        },
+                        shape,
+                    )
+                    .background(myColors.surface)
                     .let {
                         if (checked == true) {
                             val selectionColor = myColors.onBackground
                             it.background(myColors.selectionGradient(0.15f, 0.03f, selectionColor))
                         } else {
-                            it.border(1.dp, Color.Transparent)
+                            it
                         }
                     }
                     .combinedClickable(
                         onClick = onClick,
                         onLongClick = onLongClick,
                     )
-                    .padding(16.dp)
+                    .padding(horizontal = 14.dp, vertical = 12.dp)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
