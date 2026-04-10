@@ -10,6 +10,9 @@ repositories {
 }
 
 fun getOptIns(): Set<String> = setOf(
+    "androidx.compose.animation.ExperimentalAnimationApi",
+    "androidx.compose.foundation.ExperimentalFoundationApi",
+    "androidx.compose.ui.ExperimentalComposeUiApi",
     "kotlinx.coroutines.ExperimentalCoroutinesApi",
     "kotlinx.coroutines.FlowPreview",
     "kotlinx.coroutines.DelicateCoroutinesApi",
