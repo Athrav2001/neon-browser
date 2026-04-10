@@ -109,10 +109,12 @@ class HLSNewDownloadInputs(
         useWebpageTitleAsFileName.onEach { enabled ->
             if (enabled) {
                 if (initialWebpageTitleName.isNotBlank()) {
-                    name.value = FilenameFixer.fix(initialWebpageTitleName)
+                    name.value = ensureHlsFileName(FilenameFixer.fix(initialWebpageTitleName))
                 }
             } else {
-                deriveNameFromLink(credentials.value.link)?.let { name.value = FilenameFixer.fix(it) }
+                deriveNameFromLink(credentials.value.link)?.let {
+                    name.value = ensureHlsFileName(FilenameFixer.fix(it))
+                }
             }
         }.launchIn(scope)
     }
@@ -256,5 +258,11 @@ class HLSNewDownloadInputs(
         } else {
             rawName
         }
+    }
+
+    private fun ensureHlsFileName(fileName: String): String {
+        val trimmed = fileName.trim()
+        if (trimmed.isBlank()) return "video.mp4"
+        return if ('.' in trimmed) trimmed else "$trimmed.mp4"
     }
 }
