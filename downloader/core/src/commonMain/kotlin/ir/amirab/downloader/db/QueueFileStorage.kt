@@ -22,7 +22,7 @@ class DownloadQueueFileStorageDatabase(
     }
 
     private fun getQueueFiles(): List<File> {
-        return queueFolder.listFiles()
+        return queueFolder.listFiles().orEmpty()
             .filter {
                 it.isFile && it.extension == queueExtension
             }
@@ -71,9 +71,9 @@ class DownloadQueueFileStorageDatabase(
         }
     }
 
-    override suspend fun deleteQueue(queueId: Long) {
+    override suspend fun deleteQueue(queue: Long) {
         lock.withLock {
-            getFileOfQueue(queueId).delete()
+            getFileOfQueue(queue).delete()
         }
     }
 

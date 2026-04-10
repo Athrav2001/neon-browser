@@ -20,7 +20,7 @@ class PreviousVersion(
             Version.parse(versionString)
         }.getOrNull()
         kotlin.runCatching {
-            versionFile.parentFile.mkdirs()
+            requireNotNull(versionFile.parentFile).mkdirs()
             versionFile.writeText(currentVersion.toString())
         }.onFailure {
             it.printStackTrace()

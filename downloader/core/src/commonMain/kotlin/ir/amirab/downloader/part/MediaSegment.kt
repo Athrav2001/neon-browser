@@ -31,7 +31,7 @@ data class MediaSegment(
         }
 
     override fun getID(): Long {
-        return segmentIndex.toLong()
+        return segmentIndex
     }
 
     companion object {

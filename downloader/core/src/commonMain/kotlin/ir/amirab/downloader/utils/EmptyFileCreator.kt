@@ -39,7 +39,10 @@ class EmptyFileCreator(
                 onProgressUpdate(100)
                 return@withContext
             }
-            val remainingSpace = diskStat.getRemainingSpace(file.parentFile)
+            val parent = requireNotNull(file.parentFile) {
+                "Output file has no parent directory: ${file.absolutePath}"
+            }
+            val remainingSpace = diskStat.getRemainingSpace(parent)
             if (file.exists()) {
                 val currentLength = file.length()
                 val requiredLength = length - currentLength
@@ -110,7 +113,10 @@ class EmptyFileCreator(
 
     private suspend fun fillOutput(outputFile: File, length: Long, onProgressUpdate: (percent: Int) -> Unit) {
         val much = length - outputFile.length()
-        val remainingSpace = diskStat.getRemainingSpace(outputFile.parentFile)
+        val parent = requireNotNull(outputFile.parentFile) {
+            "Output file has no parent directory: ${outputFile.absolutePath}"
+        }
+        val remainingSpace = diskStat.getRemainingSpace(parent)
         if (remainingSpace < much) {
             throw NoSpaceInStorageException(remainingSpace, much)
         }

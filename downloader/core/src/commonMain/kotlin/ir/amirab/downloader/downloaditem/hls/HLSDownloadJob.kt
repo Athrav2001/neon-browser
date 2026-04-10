@@ -662,11 +662,14 @@ class HLSDownloadJob(
 
     private fun resolveRemuxTarget(source: File): File {
         val name = source.name
+        val parent = requireNotNull(source.parentFile) {
+            "Source file has no parent directory: ${source.absolutePath}"
+        }
         return if (name.endsWith(".mp4", ignoreCase = true)) {
-            source.parentFile.resolve(TEMP_REMUX_FILE_NAME)
+            parent.resolve(TEMP_REMUX_FILE_NAME)
         } else {
             val baseName = name.substringBeforeLast('.', name)
-            source.parentFile.resolve("$baseName.mp4")
+            parent.resolve("$baseName.mp4")
         }
     }
 

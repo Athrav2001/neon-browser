@@ -361,7 +361,7 @@ class DownloadInterceptor(
                     url = resolvedUrl,
                     name = extractName(baseUrl),
                     size = "Unknown",
-                    quality = pendingQuality ?: "Unknown",
+                    quality = pendingQuality,
                     isStream = true,
                 )
                 pendingQuality = null

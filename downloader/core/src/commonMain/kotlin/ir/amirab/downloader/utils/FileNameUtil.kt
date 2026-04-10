@@ -24,9 +24,12 @@ object FileNameUtil {
                 .takeIf { it.isNotEmpty() }
                 ?.let { ".$it" }.orEmpty()
             val name = filename.nameWithoutExtension
+            val parent = requireNotNull(filename.parentFile) {
+                "File has no parent directory: ${filename.absolutePath}"
+            }
             var counter = 1
             while (currentCoroutineContext().isActive) {
-                val newFile = filename.parentFile.resolve(
+                val newFile = parent.resolve(
                     "${name}_${counter}${ext}"
                 )
                 if (!newFile.exists()) {

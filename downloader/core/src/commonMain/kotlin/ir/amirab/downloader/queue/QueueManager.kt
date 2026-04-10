@@ -224,16 +224,16 @@ private class QueueInfoPersistedData(
         return cached!!
     }
 
-    override suspend fun setModel(model: QueueModel) {
-        if (model == cached) {
+    override suspend fun setModel(queue: QueueModel) {
+        if (queue == cached) {
             //nothing to update
 //            println("Noting to update")
             return
         }
         lock.withLock {
-            db.updateQueue(model)
-//            println("setModel() == $model")
-            cached = model
+            db.updateQueue(queue)
+//            println("setModel() == $queue")
+            cached = queue
         }
     }
 }

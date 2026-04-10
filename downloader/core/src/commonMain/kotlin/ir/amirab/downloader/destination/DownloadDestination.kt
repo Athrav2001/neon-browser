@@ -99,15 +99,15 @@ abstract class DownloadDestination(
         fun prepareDestinationFolder(
             outputFile: File,
         ) {
-            outputFile.parentFile.let {
-                it.canonicalFile.mkdirs()
-                if (!it.exists()) {
-                    error("can't create folder for destination file $it")
-                }
-
-                if (!it.isDirectory) {
-                    error("${outputFile.parentFile} is not a directory")
-                }
+            val parent = requireNotNull(outputFile.parentFile) {
+                "Destination has no parent directory: ${outputFile.absolutePath}"
+            }
+            parent.canonicalFile.mkdirs()
+            if (!parent.exists()) {
+                error("can't create folder for destination file $parent")
+            }
+            if (!parent.isDirectory) {
+                error("$parent is not a directory")
             }
         }
     }

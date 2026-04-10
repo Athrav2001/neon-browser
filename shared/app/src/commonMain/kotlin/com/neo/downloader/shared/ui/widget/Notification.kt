@@ -75,7 +75,7 @@ fun ShowNotification(
     title: StringSource,
     description: StringSource,
     type: NotificationType,
-    tag: Any = currentCompositeKeyHash,
+    tag: Any = currentCompositeKeyHashCode,
 ) {
     val notification = remember(tag) {
         NotificationModel(

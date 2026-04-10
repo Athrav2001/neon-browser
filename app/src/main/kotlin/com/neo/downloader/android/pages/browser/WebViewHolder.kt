@@ -175,13 +175,14 @@ class NDMWebViewClient(
                         page = view?.originalUrl ?: view?.url
                     )
                 )
-                val tab = (view as? NDMWebView)?.tabId?.let { browserComponent.getTabById(it) }
+                val ndmWebView = view as? NDMWebView
+                val tab = ndmWebView?.tabId?.let { browserComponent.getTabById(it) }
                 val requestUrl = request.url?.toString()
                 if (tab != null && requestUrl != null) {
                     requestInterceptor.onDetectedLinks(
                         urls = listOf(requestUrl),
                         userAgent = request.requestHeaders["User-Agent"],
-                        page = view?.originalUrl ?: view?.url,
+                        page = ndmWebView.originalUrl ?: ndmWebView.url,
                         tab = tab,
                     )
                 }

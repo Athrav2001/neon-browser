@@ -438,7 +438,7 @@ private fun MyTextFieldIcon(
             .fillMaxHeight()
             .ifThen(onClick != null) {
                 pointerHoverIcon(PointerIcon.Default)
-                    .clickable { onClick?.invoke() }
+                    .clickable { onClick.invoke() }
             }
             .wrapContentHeight()
             .padding(horizontal = 8.dp)
@@ -487,4 +487,3 @@ private fun NameTextField(
         errorText = errorText,
     )
 }
-

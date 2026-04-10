@@ -10,9 +10,9 @@ repositories {
 }
 
 fun getOptIns(): Set<String> = setOf(
-    "androidx.compose.animation.ExperimentalAnimationApi",
-    "androidx.compose.foundation.ExperimentalFoundationApi",
-    "androidx.compose.ui.ExperimentalComposeUiApi",
+    "kotlinx.coroutines.ExperimentalCoroutinesApi",
+    "kotlinx.coroutines.FlowPreview",
+    "kotlinx.coroutines.DelicateCoroutinesApi",
 )
 
 fun getFeatures(): Set<String> = setOf(
@@ -21,8 +21,8 @@ fun getFeatures(): Set<String> = setOf(
 
 kotlin {
     compilerOptions {
-        val optIns = getOptIns().map { "-Xopt-in=$it" }
+        val optIns = getOptIns().map { "-opt-in=$it" }
         val features = getFeatures().map { "-X$it" }
-        freeCompilerArgs.set(optIns + features)
+        freeCompilerArgs.set(optIns + features + "-Xexpect-actual-classes")
     }
 }

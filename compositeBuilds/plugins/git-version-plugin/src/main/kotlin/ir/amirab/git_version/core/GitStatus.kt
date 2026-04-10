@@ -40,7 +40,10 @@ class GitStatus(
                 GitReference.TagInfo(
                     fullName = it.name,
                     commitHash = head.name,
-                    createdAt = (f as? RevTag)?.taggerIdent?.`when`?.time,
+                    createdAt = (f as? RevTag)?.taggerIdent?.let { tagger ->
+                        @Suppress("DEPRECATION")
+                        tagger.`when`.time
+                    },
                 )
             }
         }

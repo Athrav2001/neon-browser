@@ -105,106 +105,103 @@ private fun ShowDeletePrompts(
         state.show()
     }
     state.OnFullyDismissed(onCancel)
-    // shadow the actual parameter
     ResponsiveDialog(state, state::hide) {
-        deletePromptState?.let { deletePromptState ->
-            SheetUI(
-                header = {
-                    SheetHeader(
-                        headerTitle = {
-                            SheetTitle(myStringResource(Res.string.confirm_delete_download_items_title))
-                        }
-                    )
-                }
-            ) {
-                Column(
-                    Modifier
-                        .padding(horizontal = mySpacings.largeSpace)
-                        .padding(bottom = mySpacings.largeSpace)
-                ) {
-                    val finishedCount = deletePromptState.finishedCount
-                    val unfinishedCount = deletePromptState.unfinishedCount
-                    Text(
-                        when {
-                            deletePromptState.hasBothFinishedAndUnfinished() -> {
-                                Res.string.confirm_delete_download_finished_and_unfinished_items_description.asStringSourceWithARgs(
-                                    Res.string.confirm_delete_download_finished_and_unfinished_items_description_createArgs(
-                                        finishedCount = finishedCount.toString(),
-                                        unfinishedCount = unfinishedCount.toString(),
-                                    )
-                                )
-                            }
-
-                            deletePromptState.hasUnfinishedDownloads -> {
-                                Res.string.confirm_delete_download_unfinished_items_description.asStringSourceWithARgs(
-                                    Res.string.confirm_delete_download_unfinished_items_description_createArgs(
-                                        count = unfinishedCount.toString(),
-                                    )
-                                )
-                            }
-
-                            else -> {
-                                Res.string.confirm_delete_download_items_description.asStringSourceWithARgs(
-                                    Res.string.confirm_delete_download_items_description_createArgs(
-                                        count = finishedCount.toString()
-                                    ),
-                                )
-                            }
-                        }.rememberString(),
-                        fontSize = myTextSizes.base,
-                        color = myColors.onBackground,
-                    )
-                    if (deletePromptState.hasFinishedDownloads) {
-                        Spacer(Modifier.height(12.dp))
-                        val alsoDeleteFileInteractionSource = remember { MutableInteractionSource() }
-                        Row(
-                            Modifier
-                                .clickable(
-                                    interactionSource = alsoDeleteFileInteractionSource,
-                                    indication = null
-                                ) {
-                                    deletePromptState.alsoDeleteFile = !deletePromptState.alsoDeleteFile
-                                },
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            CheckBox(
-                                value = deletePromptState.alsoDeleteFile,
-                                onValueChange = {
-                                    deletePromptState.alsoDeleteFile = it
-                                },
-                                modifier = Modifier
-                                    // the Row itself is clickable (focusable) so we don't need to focus this checkbox
-                                    // is there a better way?
-                                    .focusProperties { canFocus = false },
-                                interactionSource = alsoDeleteFileInteractionSource,
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text(
-                                myStringResource(Res.string.also_delete_file_from_disk),
-                                fontSize = myTextSizes.base,
-                                color = myColors.onBackground,
-                            )
-                        }
+        SheetUI(
+            header = {
+                SheetHeader(
+                    headerTitle = {
+                        SheetTitle(myStringResource(Res.string.confirm_delete_download_items_title))
                     }
+                )
+            }
+        ) {
+            Column(
+                Modifier
+                    .padding(horizontal = mySpacings.largeSpace)
+                    .padding(bottom = mySpacings.largeSpace)
+            ) {
+                val finishedCount = deletePromptState.finishedCount
+                val unfinishedCount = deletePromptState.unfinishedCount
+                Text(
+                    when {
+                        deletePromptState.hasBothFinishedAndUnfinished() -> {
+                            Res.string.confirm_delete_download_finished_and_unfinished_items_description.asStringSourceWithARgs(
+                                Res.string.confirm_delete_download_finished_and_unfinished_items_description_createArgs(
+                                    finishedCount = finishedCount.toString(),
+                                    unfinishedCount = unfinishedCount.toString(),
+                                )
+                            )
+                        }
+
+                        deletePromptState.hasUnfinishedDownloads -> {
+                            Res.string.confirm_delete_download_unfinished_items_description.asStringSourceWithARgs(
+                                Res.string.confirm_delete_download_unfinished_items_description_createArgs(
+                                    count = unfinishedCount.toString(),
+                                )
+                            )
+                        }
+
+                        else -> {
+                            Res.string.confirm_delete_download_items_description.asStringSourceWithARgs(
+                                Res.string.confirm_delete_download_items_description_createArgs(
+                                    count = finishedCount.toString()
+                                ),
+                            )
+                        }
+                    }.rememberString(),
+                    fontSize = myTextSizes.base,
+                    color = myColors.onBackground,
+                )
+                if (deletePromptState.hasFinishedDownloads) {
                     Spacer(Modifier.height(12.dp))
+                    val alsoDeleteFileInteractionSource = remember { MutableInteractionSource() }
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        Modifier
+                            .clickable(
+                                interactionSource = alsoDeleteFileInteractionSource,
+                                indication = null
+                            ) {
+                                deletePromptState.alsoDeleteFile = !deletePromptState.alsoDeleteFile
+                            },
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        ActionButton(
-                            text = myStringResource(Res.string.cancel),
-                            onClick = onCancel,
-                            modifier = Modifier.weight(1f),
+                        CheckBox(
+                            value = deletePromptState.alsoDeleteFile,
+                            onValueChange = {
+                                deletePromptState.alsoDeleteFile = it
+                            },
+                            modifier = Modifier
+                                // the Row itself is clickable (focusable) so we don't need to focus this checkbox
+                                // is there a better way?
+                                .focusProperties { canFocus = false },
+                            interactionSource = alsoDeleteFileInteractionSource,
                         )
                         Spacer(Modifier.width(8.dp))
-                        ActionButton(
-                            text = myStringResource(Res.string.delete),
-                            onClick = onConfirm,
-                            borderColor = SolidColor(myColors.error),
-                            contentColor = myColors.error,
-                            modifier = Modifier.weight(1f)
+                        Text(
+                            myStringResource(Res.string.also_delete_file_from_disk),
+                            fontSize = myTextSizes.base,
+                            color = myColors.onBackground,
                         )
                     }
+                }
+                Spacer(Modifier.height(12.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    ActionButton(
+                        text = myStringResource(Res.string.cancel),
+                        onClick = onCancel,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    ActionButton(
+                        text = myStringResource(Res.string.delete),
+                        onClick = onConfirm,
+                        borderColor = SolidColor(myColors.error),
+                        contentColor = myColors.error,
+                        modifier = Modifier.weight(1f)
+                    )
                 }
             }
         }

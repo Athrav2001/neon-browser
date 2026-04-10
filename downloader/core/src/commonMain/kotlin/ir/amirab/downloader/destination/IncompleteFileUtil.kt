@@ -19,8 +19,11 @@ object IncompleteFileUtil {
             // this is a workaround for Windows systems which have a maximum path length of 260 characters
             // see https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file#maximum-path-length-limitation
             val trimmedFileName = if (Platform.isWindows()) {
+                val parent = requireNotNull(file.parentFile) {
+                    "File has no parent directory: ${file.absolutePath}"
+                }
                 // this + 1 is to account for last slash in the path
-                val parentPathLength = file.parentFile.path.length + 1
+                val parentPathLength = parent.path.length + 1
                 file.name.take(
                     (SYSTEM_MAXIMUM_FULL_PATH_LENGTH - (parentPathLength + ext.length))
                         // maybe the remaining length is negative which means the file name is too long even after trim!
@@ -32,8 +35,10 @@ object IncompleteFileUtil {
                 // and some other systems which have a maximum file name length of 255 characters
                 file.name.take(SYSTEM_MAXIMUM_FILE_LENGTH - ext.length)
             }
-
-            return file.parentFile.resolve(trimmedFileName + ext)
+            val parent = requireNotNull(file.parentFile) {
+                "File has no parent directory: ${file.absolutePath}"
+            }
+            return parent.resolve(trimmedFileName + ext)
         }
         return file
     }
