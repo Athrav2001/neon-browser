@@ -45,7 +45,6 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
@@ -149,20 +148,6 @@ fun BrowserPage(
                         .navigationBarsPadding()
                         .imePadding()
                 ) {
-                    Spacer(
-                        Modifier
-                            .height(1.dp)
-                            .fillMaxWidth()
-                            .background(
-                                Brush.horizontalGradient(
-                                    colors = listOf(
-                                        Color.Transparent,
-                                        myColors.onSurface / if (myColors.isLight) 0.04f else 0f,
-                                        Color.Transparent,
-                                    )
-                                )
-                            )
-                    )
                     tab?.tabState?.loadingState?.let {
                         if (it is LoadingState.Loading) {
                             Box(
