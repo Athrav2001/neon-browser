@@ -229,6 +229,7 @@ fun BrowserPage(
         items = detectedItems,
         onDismissRequest = browserComponent::closeGrabber,
         onRefresh = {
+            activeTabId?.let { browserComponent.clearGrabberItems(it) }
             tabWebViewHolder?.client?.requestGrabberScan(tabWebViewHolder.webView)
         },
         onDownloadOne = { url ->

@@ -369,6 +369,14 @@ class NDMWebViewClient(
                 matches.forEach(function(u) { addFile(u, 'Script Link'); });
               });
 
+              // Include already fetched resources from this page session so refresh can rebuild list
+              // even if the DOM does not directly expose download links.
+              if (window.performance && window.performance.getEntriesByType) {
+                window.performance.getEntriesByType('resource').forEach(function(entry) {
+                  if (entry && entry.name) addFile(entry.name, 'Resource Link');
+                });
+              }
+
               return foundFiles;
             })();
         """
