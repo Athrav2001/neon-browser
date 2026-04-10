@@ -8,8 +8,6 @@ import ir.amirab.downloader.connection.Connection
 import ir.amirab.downloader.connection.IResponseInfo
 import ir.amirab.downloader.connection.response.HttpResponseInfo
 import ir.amirab.downloader.connection.response.expectSuccess
-import ir.amirab.downloader.utils.FileNameUtil
-import ir.amirab.util.HttpUrlUtils
 import okio.buffer
 import java.io.IOException
 
@@ -47,17 +45,6 @@ data class HLSResponseInfo(
             if (mediaSegments.isEmpty()) {
                 throw UnsupportedOperationException(
                     "playlist has no segments"
-                )
-            }
-            val firstSegmentExtension = HttpUrlUtils
-                .createURL(connection.responseInfo.requestUrl)
-                .resolve(mediaSegments[0].uri())?.toString()
-                ?.let(HttpUrlUtils::extractNameFromLink)
-                ?.let(FileNameUtil::getExtensionOrNull)
-                ?.lowercase()
-            if (firstSegmentExtension != "ts") {
-                throw UnsupportedOperationException(
-                    "Only HLS .ts segments supported at the moment, but '$firstSegmentExtension' provided"
                 )
             }
             if (isMediaPlayListEncrypted(playlist)) {

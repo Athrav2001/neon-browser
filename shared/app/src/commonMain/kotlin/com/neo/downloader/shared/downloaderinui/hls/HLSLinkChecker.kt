@@ -17,7 +17,7 @@ class HLSLinkChecker(
     initialCredentials = credentials
 ) {
     private val _suggestedName: MutableStateFlow<String?> = MutableStateFlow(null)
-    override val suggestedName: StateFlow<String?> = MutableStateFlow(null)
+    override val suggestedName: StateFlow<String?> = _suggestedName.asStateFlow()
     private val _duration: MutableStateFlow<Double?> = MutableStateFlow(null)
     val duration: StateFlow<Double?> = _duration.asStateFlow()
     override val downloadSize: StateFlow<DownloadSize.Duration?> = _duration.mapStateFlow {
@@ -25,6 +25,11 @@ class HLSLinkChecker(
     }
     override fun infoUpdated(responseInfo: HLSResponseInfo?) {
         _suggestedName.value = responseInfo?.name
+            ?.removeSuffix(".m3u8")
+            ?.removeSuffix(".M3U8")
+            ?.let {
+                if (it.contains('.')) it else "$it.mp4"
+            }
         _duration.value = responseInfo?.duration
     }
 
