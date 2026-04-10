@@ -12,7 +12,6 @@ import com.neo.downloader.android.util.pagemanager.IBrowserPageManager
 import com.neo.downloader.resources.Res
 import com.neo.downloader.shared.action.createCheckForUpdateAction
 import com.neo.downloader.shared.action.createDownloadFromClipboardAction
-import com.neo.downloader.shared.action.createDummyExceptionAction
 import com.neo.downloader.shared.action.createDummyMessageAction
 import com.neo.downloader.shared.action.createNewDownloadAction
 import com.neo.downloader.shared.action.createOpenAboutPage
@@ -356,7 +355,6 @@ class HomeComponent(
         if (AppInfo.isInDebugMode) {
             separator()
             +createDummyMessageAction(notificationSender)
-            +createDummyExceptionAction()
         }
         separator()
         +createPerHostSettingsPage(perHostSettingsPageManager = perHostSettingsPageManager)
