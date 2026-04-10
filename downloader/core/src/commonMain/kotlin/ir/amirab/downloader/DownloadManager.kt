@@ -335,7 +335,23 @@ class DownloadManager(
     }
 
     fun calculateOutputFile(downloadItem: IDownloadItem): File {
-        return File(downloadItem.folder, downloadItem.name)
+        return File(downloadItem.folder, sanitizeFileName(downloadItem.name))
+    }
+
+    private fun sanitizeFileName(name: String): String {
+        val trimmed = name.trim()
+        if (trimmed.isBlank()) return "download.bin"
+        return buildString(trimmed.length) {
+            trimmed.forEach { ch ->
+                append(
+                    when (ch) {
+                        '/', '\\', ':', '*', '?', '"', '<', '>', '|' -> '_'
+                        '\u0000' -> '_'
+                        else -> ch
+                    }
+                )
+            }
+        }.ifBlank { "download.bin" }
     }
 
     fun getJobStatusOf(id: Long): DownloadJobStatus? {
