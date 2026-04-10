@@ -55,6 +55,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.neo.downloader.android.pages.browser.bookmark.BookmarkList
 import com.neo.downloader.android.pages.browser.bookmark.EditBookmarkSheet
+import com.neo.browser.logic.history.NeoBrowserHistoryEntry
 import com.neo.downloader.android.storage.BrowserBookmark
 import com.neo.downloader.android.R
 import com.neo.downloader.android.ui.SheetHeader
@@ -76,12 +77,14 @@ import com.neo.downloader.shared.util.ClipboardUtil
 import com.neo.downloader.shared.util.ResponsiveDialog
 import com.neo.downloader.shared.util.div
 import com.neo.downloader.shared.util.rememberResponsiveDialogState
+import com.neo.downloader.shared.util.ui.LocalContentColor
 import com.neo.downloader.shared.util.ui.WithContentAlpha
 import com.neo.downloader.shared.util.ui.WithContentColor
 import com.neo.downloader.shared.util.ui.icon.MyIcons
 import com.neo.downloader.shared.util.ui.myColors
 import com.neo.downloader.shared.util.ui.theme.myShapes
 import com.neo.downloader.shared.util.ui.theme.mySpacings
+import com.neo.downloader.shared.util.ui.theme.myTextSizes
 import com.neo.downloader.shared.util.ui.widget.MyIcon
 import ir.amirab.util.compose.asStringSource
 import ir.amirab.util.compose.resources.myStringResource
@@ -282,6 +285,21 @@ fun BrowserPage(
         onRequestNewBookmark = {
             browserComponent.promptAddBookmark((BrowserBookmark("", "")))
         },
+    )
+    BrowserHistoryList(
+        visible = browserComponent.showHistoryList.collectAsState().value,
+        onDismissRequest = { browserComponent.setShowHistoryList(false) },
+        entries = browserComponent.history.collectAsState().value,
+        onHistoryClick = { entry ->
+            browserComponent.setShowHistoryList(false)
+            val newLink = browserComponent.createNewUrlFor(entry.url)
+            tabWebViewHolder
+                ?.navigator
+                ?.loadUrl(newLink)
+                ?: browserComponent.newTab(newLink)
+        },
+        onRemoveHistoryRequest = browserComponent::removeFromHistory,
+        onClearAllRequest = browserComponent::clearHistory,
     )
     val editBookmarkState by browserComponent.editBookmarkState.collectAsState()
     editBookmarkState?.let { s ->
@@ -560,6 +578,95 @@ fun EmptyPage(
                     Spacer(Modifier.width(mySpacings.mediumSpace))
                 }
             )
+        }
+    }
+}
+
+@Composable
+private fun BrowserHistoryList(
+    visible: Boolean,
+    onDismissRequest: () -> Unit,
+    entries: List<NeoBrowserHistoryEntry>,
+    onHistoryClick: (NeoBrowserHistoryEntry) -> Unit,
+    onRemoveHistoryRequest: (NeoBrowserHistoryEntry) -> Unit,
+    onClearAllRequest: () -> Unit,
+) {
+    val responsiveState = rememberResponsiveDialogState(visible)
+    LaunchedEffect(visible) {
+        if (visible) responsiveState.show() else responsiveState.hide()
+    }
+    ResponsiveDialog(
+        state = responsiveState,
+        onDismiss = onDismissRequest,
+    ) {
+        SheetUI(
+            header = {
+                SheetHeader(
+                    headerTitle = { SheetTitle("History") },
+                    headerActions = {
+                        TransparentIconActionButton(
+                            MyIcons.clear,
+                            "Clear".asStringSource(),
+                        ) { onClearAllRequest() }
+                        TransparentIconActionButton(
+                            MyIcons.close,
+                            Res.string.close.asStringSource(),
+                        ) { onDismissRequest() }
+                    }
+                )
+            }
+        ) {
+            if (entries.isEmpty()) {
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(mySpacings.largeSpace),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text("No history yet")
+                }
+            } else {
+                LazyColumn {
+                    items(entries) { entry ->
+                        Row(
+                            modifier = Modifier
+                                .heightIn(mySpacings.thumbSize)
+                                .clickable { onHistoryClick(entry) }
+                                .padding(vertical = 8.dp, horizontal = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            MyIcon(
+                                MyIcons.clock,
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp),
+                            )
+                            Spacer(Modifier.width(16.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(
+                                    text = entry.title.ifBlank { entry.url },
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                                Text(
+                                    text = entry.url,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    fontSize = myTextSizes.sm,
+                                    color = LocalContentColor.current / 0.75f,
+                                )
+                            }
+                            WithContentAlpha(0.5f) {
+                                TransparentIconActionButton(
+                                    MyIcons.remove,
+                                    Res.string.remove.asStringSource(),
+                                ) {
+                                    onRemoveHistoryRequest(entry)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

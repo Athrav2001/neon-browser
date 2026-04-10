@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import androidx.compose.runtime.Stable
 import com.neo.browser.logic.history.NeoBrowserHistoryManager
+import com.neo.browser.logic.history.NeoBrowserHistoryEntry
 import com.neo.browser.logic.session.NeoBrowserSessionManager
 import com.neo.browser.logic.session.NeoBrowserSessionTab
 import com.neo.browser.logic.search.NeoSearchEngine
@@ -105,6 +106,8 @@ class BrowserComponent(
     val userAgent = appSettingsStorage.userAgent.asStateFlow()
     private val _mainMenu: MutableStateFlow<MenuItem.SubMenu?> = MutableStateFlow(null)
     val mainMenu = _mainMenu.asStateFlow()
+    private val _showHistoryList: MutableStateFlow<Boolean> = MutableStateFlow(false)
+    val showHistoryList = _showHistoryList.asStateFlow()
     fun openMainMenu() {
         val tab = tabs.value.activeTab
         val url = tab?.tabState?.lastLoadedUrl
@@ -115,6 +118,7 @@ class BrowserComponent(
                 +createNewTabAction()
                 separator()
                 +createShowBookmarksAction()
+                +createShowHistoryAction()
                 subMenu(
                     title = "User Agent".asStringSource(),
                     icon = MyIcons.earth,
@@ -215,6 +219,22 @@ class BrowserComponent(
     val showBookmarkList = _showBookmarkList.asStateFlow()
     fun setShowBookmarkList(show: Boolean) {
         _showBookmarkList.value = show
+    }
+
+    fun setShowHistoryList(show: Boolean) {
+        _showHistoryList.value = show
+    }
+
+    fun removeFromHistory(entry: NeoBrowserHistoryEntry) {
+        browserHistoryStorage.historyFlow.update { current ->
+            current.filterNot {
+                it.url == entry.url && it.visitedAt == entry.visitedAt
+            }
+        }
+    }
+
+    fun clearHistory() {
+        browserHistoryStorage.historyFlow.value = emptyList()
     }
 
     private val _editBookmarkState = MutableStateFlow<EditBookmarkState?>(null)
@@ -521,6 +541,15 @@ class BrowserComponent(
             icon = MyIcons.hearth,
         ) {
             setShowBookmarkList(true)
+        }
+    }
+
+    fun createShowHistoryAction(): AnAction {
+        return simpleAction(
+            title = "History".asStringSource(),
+            icon = MyIcons.clock,
+        ) {
+            setShowHistoryList(true)
         }
     }
 
