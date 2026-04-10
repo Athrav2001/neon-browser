@@ -532,7 +532,8 @@ class HLSDownloadJob(
     // we should compare those and update them
     // we reset the whole if we found different duration
     fun updateParts(
-        playlist: MediaPlaylist
+        playlist: MediaPlaylist,
+        initSegmentUri: String? = null,
     ) {
         val newParts = playlist.mediaSegments()
             .mapIndexed { index, segment ->
@@ -541,7 +542,17 @@ class HLSDownloadJob(
                     link = segment.uri(),
                     duration = segment.duration()
                 )
-            }
+            }.toMutableList()
+        if (!initSegmentUri.isNullOrBlank()) {
+            newParts.add(
+                0,
+                MediaSegment(
+                    segmentIndex = playlist.mediaSequence() - 1L,
+                    link = initSegmentUri,
+                    duration = 0.0,
+                )
+            )
+        }
         val currentParts = parts
         downloadItem.duration = newParts.sumOf { it.duration }
         if (currentParts.isEmpty()) {
@@ -578,7 +589,8 @@ class HLSDownloadJob(
             HLSResponseInfo.fromConnection(it)
         }
         updateParts(
-            response.hlsManifest
+            playlist = response.hlsManifest,
+            initSegmentUri = response.initSegmentUri,
         )
         return response
     }
@@ -701,8 +713,10 @@ class HLSDownloadJob(
         if (config !is HLSDownloadJobExtraConfig) return
         downloadItem.remuxToMp4 = config.remuxToMp4
         saveDownloadItem()
-        config.hlsManifest?.let {
-            updateParts(it)
+        // Keep extra-config manifest updates only for already-initialized jobs.
+        // Initial boot fetch parses raw manifest and captures EXT-X-MAP init segment too.
+        config.hlsManifest?.takeIf { parts.isNotEmpty() }?.let {
+            updateParts(it, initSegmentUri = null)
             saveParts()
         }
     }

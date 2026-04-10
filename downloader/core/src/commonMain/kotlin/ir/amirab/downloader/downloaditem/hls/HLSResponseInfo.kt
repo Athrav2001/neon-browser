@@ -13,7 +13,8 @@ import java.io.IOException
 
 data class HLSResponseInfo(
     val httpResponseInfo: HttpResponseInfo,
-    val hlsManifest: MediaPlaylist
+    val hlsManifest: MediaPlaylist,
+    val initSegmentUri: String? = null,
 ) : IResponseInfo {
     val name: String?
         get() = httpResponseInfo.fileName
@@ -55,6 +56,7 @@ data class HLSResponseInfo(
             return HLSResponseInfo(
                 connection.responseInfo,
                 playlist,
+                initSegmentUri = extractInitSegmentUri(data),
             )
         }
 
@@ -108,6 +110,19 @@ data class HLSResponseInfo(
                     key.method() != KeyMethod.NONE
                 }
             }
+        }
+
+        private fun extractInitSegmentUri(manifest: String): String? {
+            val line = manifest
+                .lineSequence()
+                .map { it.trim() }
+                .firstOrNull { it.startsWith("#EXT-X-MAP", ignoreCase = true) }
+                ?: return null
+            return Regex("""URI="([^"]+)"""", RegexOption.IGNORE_CASE)
+                .find(line)
+                ?.groupValues
+                ?.getOrNull(1)
+                ?.takeIf { it.isNotBlank() }
         }
     }
 }
