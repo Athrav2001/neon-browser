@@ -249,7 +249,7 @@ class HLSNewDownloadInputs(
     }
 
     private fun deriveNameFromLink(link: String): String? {
-        val rawName = HttpUrlUtils.extractNameFromLink(link).takeIf { it.isNotBlank() } ?: return null
+        val rawName = HttpUrlUtils.extractNameFromLink(link)?.takeIf { it.isNotBlank() } ?: return null
         return if (rawName.endsWith(".m3u8", ignoreCase = true)) {
             rawName.removeSuffix(".m3u8").removeSuffix(".M3U8") + ".mp4"
         } else {

@@ -227,6 +227,6 @@ class HttpNewDownloadInputs(
     }
 
     private fun deriveNameFromLink(link: String): String? {
-        return HttpUrlUtils.extractNameFromLink(link).takeIf { it.isNotBlank() }
+        return HttpUrlUtils.extractNameFromLink(link)?.takeIf { it.isNotBlank() }
     }
 }
