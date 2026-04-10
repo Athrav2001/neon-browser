@@ -3,6 +3,7 @@ package com.neo.downloader.shared.downloaderinui.http.add
 import com.neo.downloader.resources.Res
 import com.neo.downloader.shared.downloaderinui.DownloadSize
 import com.neo.downloader.shared.downloaderinui.add.NewDownloadInputs
+import com.neo.downloader.shared.ui.configurable.item.BooleanConfigurable
 import com.neo.downloader.shared.ui.configurable.item.FileChecksumConfigurable
 import com.neo.downloader.shared.ui.configurable.item.IntConfigurable
 import com.neo.downloader.shared.ui.configurable.item.SpeedLimitConfigurable
@@ -19,6 +20,7 @@ import ir.amirab.downloader.downloaditem.DownloadStatus
 import ir.amirab.downloader.downloaditem.IDownloadItem
 import ir.amirab.downloader.downloaditem.http.HttpDownloadCredentials
 import ir.amirab.downloader.downloaditem.http.HttpDownloadItem
+import ir.amirab.util.HttpUrlUtils
 import ir.amirab.util.compose.StringSource
 import ir.amirab.util.compose.asStringSource
 import ir.amirab.util.compose.asStringSourceWithARgs
@@ -29,6 +31,8 @@ import ir.amirab.util.flow.mapTwoWayStateFlow
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 
 class HttpNewDownloadInputs(
     downloadUiChecker: HttpDownloadUiChecker,
@@ -47,6 +51,10 @@ class HttpNewDownloadInputs(
     private var threadCount = MutableStateFlow(null as Int?)
     private var speedLimit = MutableStateFlow(0L)
     private var fileChecksum = MutableStateFlow(null as FileChecksum?)
+    private val initialWebpageTitleName = name.value
+    private var useWebpageTitleAsFileName = MutableStateFlow(
+        initialWebpageTitleName.isNotBlank() && credentials.value.downloadPage != null
+    )
     override val downloadItem: StateFlow<HttpDownloadItem> = combineStateFlows(
         this.credentials,
         this.folder,
@@ -81,6 +89,18 @@ class HttpNewDownloadInputs(
     }
 
     override val downloadJobConfig: StateFlow<DownloadJobExtraConfig?> = MutableStateFlow(null)
+
+    init {
+        useWebpageTitleAsFileName.onEach { enabled ->
+            if (enabled) {
+                if (initialWebpageTitleName.isNotBlank()) {
+                    name.value = initialWebpageTitleName
+                }
+            } else {
+                deriveNameFromLink(credentials.value.link)?.let { name.value = it }
+            }
+        }.launchIn(scope)
+    }
 
     override fun applyHostSettingsToExtraConfig(extraConfig: PerHostSettingsItem) {
         extraConfig.applyToHttpDownload(
@@ -130,6 +150,14 @@ class HttpNewDownloadInputs(
                             count = it.toString()
                         )
                     )
+            }
+        ),
+        BooleanConfigurable(
+            title = "Use webpage title as file name".asStringSource(),
+            description = "When enabled, default name comes from webpage title".asStringSource(),
+            backedBy = useWebpageTitleAsFileName,
+            describe = {
+                if (it) "Enabled".asStringSource() else "Disabled".asStringSource()
             }
         ),
         StringConfigurable(
@@ -196,5 +224,9 @@ class HttpNewDownloadInputs(
 
     override fun downloadSizeToStringSource(downloadSize: DownloadSize.Bytes): StringSource {
         return downloadSize.asStringSource(sizeAndSpeedUnitProvider.sizeUnit.value)
+    }
+
+    private fun deriveNameFromLink(link: String): String? {
+        return HttpUrlUtils.extractNameFromLink(link).takeIf { it.isNotBlank() }
     }
 }

@@ -75,9 +75,9 @@ class DownloadInterceptor(
         }
         onNewDownload(
             listOf(
-                AddDownloadCredentialsInUiProps(
-                    createCredentialsFor(webRequest),
-                    AddDownloadCredentialsInUiProps.Configs()
+                createAddDownloadProps(
+                    webRequest = webRequest,
+                    pageTitle = tab.tabState.pageTitle,
                 )
             )
         )
@@ -151,9 +151,9 @@ class DownloadInterceptor(
                 )
             }
             .map { webRequest ->
-                AddDownloadCredentialsInUiProps(
-                    createCredentialsFor(webRequest),
-                    AddDownloadCredentialsInUiProps.Configs()
+                createAddDownloadProps(
+                    webRequest = webRequest,
+                    pageTitle = tab.tabState.pageTitle,
                 )
             }
 
@@ -447,6 +447,56 @@ class DownloadInterceptor(
                 headers = effectiveHeaders,
                 downloadPage = webRequest.page,
             )
+        }
+    }
+
+    private fun createAddDownloadProps(
+        webRequest: NDMWebRequest,
+        pageTitle: String?,
+    ): AddDownloadCredentialsInUiProps {
+        return AddDownloadCredentialsInUiProps(
+            credentials = createCredentialsFor(webRequest),
+            extraConfig = AddDownloadCredentialsInUiProps.Configs(
+                suggestedName = buildSuggestedName(
+                    url = webRequest.url,
+                    pageTitle = pageTitle,
+                )
+            )
+        )
+    }
+
+    private fun buildSuggestedName(
+        url: String,
+        pageTitle: String?,
+    ): String? {
+        val title = pageTitle?.trim().orEmpty().takeIf { it.isNotBlank() } ?: return null
+        val quality = extractQuality(url).takeIf { it != "Unknown" }
+        val base = if (quality != null && !title.contains(quality, ignoreCase = true)) {
+            "$title $quality"
+        } else {
+            title
+        }
+
+        val extFromUrl = url
+            .substringBefore('#')
+            .substringBefore('?')
+            .substringAfterLast('/', "")
+            .substringAfterLast('.', "")
+            .lowercase(Locale.US)
+            .takeIf { it.isNotBlank() }
+        val outputExt = when {
+            url.lowercase(Locale.US).contains(".m3u8") -> "mp4"
+            extFromUrl == "m3u8" -> "mp4"
+            extFromUrl != null && extFromUrl in USEFUL_EXTENSIONS -> extFromUrl
+            else -> null
+        }
+
+        return if (outputExt == null) {
+            base
+        } else if (base.lowercase(Locale.US).endsWith(".$outputExt")) {
+            base
+        } else {
+            "$base.$outputExt"
         }
     }
 

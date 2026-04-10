@@ -21,6 +21,7 @@ import ir.amirab.downloader.downloaditem.DownloadJobExtraConfig
 import ir.amirab.downloader.downloaditem.DownloadStatus
 import ir.amirab.downloader.downloaditem.hls.HLSDownloadItem
 import ir.amirab.downloader.downloaditem.hls.HLSDownloadJobExtraConfig
+import ir.amirab.util.HttpUrlUtils
 import ir.amirab.util.compose.StringSource
 import ir.amirab.util.compose.asStringSource
 import ir.amirab.util.compose.asStringSourceWithARgs
@@ -31,6 +32,8 @@ import ir.amirab.util.flow.mapTwoWayStateFlow
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 
 class HLSNewDownloadInputs(
     downloadUiChecker: HLSDownloadUIChecker,
@@ -51,6 +54,10 @@ class HLSNewDownloadInputs(
     private var speedLimit = MutableStateFlow(0L)
     private var fileChecksum = MutableStateFlow(null as FileChecksum?)
     private var remuxToMp4 = MutableStateFlow(false)
+    private val initialWebpageTitleName = name.value
+    private var useWebpageTitleAsFileName = MutableStateFlow(
+        initialWebpageTitleName.isNotBlank() && credentials.value.downloadPage != null
+    )
     override val downloadItem: StateFlow<HLSDownloadItem> = combineStateFlows(
         this.credentials,
         this.folder,
@@ -95,6 +102,18 @@ class HLSNewDownloadInputs(
                 remuxToMp4 = remuxToMp4,
             )
         }
+    }
+
+    init {
+        useWebpageTitleAsFileName.onEach { enabled ->
+            if (enabled) {
+                if (initialWebpageTitleName.isNotBlank()) {
+                    name.value = initialWebpageTitleName
+                }
+            } else {
+                deriveNameFromLink(credentials.value.link)?.let { name.value = it }
+            }
+        }.launchIn(scope)
     }
 
     override fun applyHostSettingsToExtraConfig(extraConfig: PerHostSettingsItem) {
@@ -151,6 +170,14 @@ class HLSNewDownloadInputs(
             title = "Use FFmpeg MP4 conversion".asStringSource(),
             description = "Enable FFmpeg conversion for this HLS download".asStringSource(),
             backedBy = remuxToMp4,
+            describe = {
+                if (it) "Enabled".asStringSource() else "Disabled".asStringSource()
+            }
+        ),
+        BooleanConfigurable(
+            title = "Use webpage title as file name".asStringSource(),
+            description = "When enabled, default name comes from webpage title".asStringSource(),
+            backedBy = useWebpageTitleAsFileName,
             describe = {
                 if (it) "Enabled".asStringSource() else "Disabled".asStringSource()
             }
@@ -219,5 +246,14 @@ class HLSNewDownloadInputs(
 
     override fun downloadSizeToStringSource(downloadSize: DownloadSize.Duration): StringSource {
         return downloadSize.asStringSource()
+    }
+
+    private fun deriveNameFromLink(link: String): String? {
+        val rawName = HttpUrlUtils.extractNameFromLink(link).takeIf { it.isNotBlank() } ?: return null
+        return if (rawName.endsWith(".m3u8", ignoreCase = true)) {
+            rawName.removeSuffix(".m3u8").removeSuffix(".M3U8") + ".mp4"
+        } else {
+            rawName
+        }
     }
 }
