@@ -14,6 +14,7 @@ import java.net.URI
 import java.net.URL
 import java.nio.charset.StandardCharsets
 import java.util.Locale
+import java.util.UUID
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 
@@ -48,6 +49,42 @@ class AdBlockFiltersManager(
         }
     }
 
+    fun addSource(
+        name: String,
+        url: String,
+        enabled: Boolean = true,
+    ) {
+        val source = AdBlockFilterSource(
+            id = "src_${UUID.randomUUID().toString().replace("-", "")}",
+            name = name.trim(),
+            url = url.trim(),
+            enabled = enabled,
+        )
+        sourceStorage.sourcesFlow.value = sourceStorage.sourcesFlow.value + source
+    }
+
+    fun updateSource(
+        id: String,
+        name: String,
+        url: String,
+    ) {
+        sourceStorage.sourcesFlow.value = sourceStorage.sourcesFlow.value.map { source ->
+            if (source.id == id) {
+                source.copy(
+                    name = name.trim(),
+                    url = url.trim(),
+                )
+            } else {
+                source
+            }
+        }
+    }
+
+    fun deleteSource(id: String) {
+        sourceStorage.sourcesFlow.value = sourceStorage.sourcesFlow.value.filterNot { it.id == id }
+        sourceCacheFile(id).delete()
+    }
+
     fun setAutoUpdateEnabled(enabled: Boolean) {
         appSettingsStorage.adBlockAutoUpdateEnabled.value = enabled
     }
@@ -72,6 +109,20 @@ class AdBlockFiltersManager(
         }
     }
 
+    fun forceUpdateSourceInBackground(
+        sourceId: String,
+        onCompleted: ((Result<Int>) -> Unit)? = null,
+    ) {
+        sourceStorage.sourcesFlow.value = sourceStorage.sourcesFlow.value.map { source ->
+            if (source.id == sourceId) {
+                source.copy(etag = null, lastModified = null)
+            } else {
+                source
+            }
+        }
+        forceUpdateInBackground(onCompleted)
+    }
+
     private fun shouldUpdate(): Boolean {
         val sevenDaysMillis = 7L * 24L * 60L * 60L * 1000L
         val last = appSettingsStorage.adBlockLastUpdatedAt.value
@@ -79,7 +130,16 @@ class AdBlockFiltersManager(
     }
 
     private fun ensureSourcesBootstrapped() {
-        if (sourceStorage.sourcesFlow.value.isEmpty()) {
+        val current = sourceStorage.sourcesFlow.value
+        if (current.isEmpty()) {
+            sourceStorage.sourcesFlow.value = defaultAdBlockSources()
+            return
+        }
+        val oldIds = setOf("1dm_pack", "easylist", "adguard_mobile")
+        val needsMigration = current.any { source ->
+            source.url.contains("files.catbox.moe", ignoreCase = true)
+        } || (current.size <= 3 && current.all { it.id in oldIds })
+        if (needsMigration) {
             sourceStorage.sourcesFlow.value = defaultAdBlockSources()
         }
     }
@@ -155,6 +215,8 @@ class AdBlockFiltersManager(
         val updated = source.copy(
             etag = remoteEtag ?: source.etag,
             lastModified = remoteLastModified ?: source.lastModified,
+            downloadedBytes = bytes.size.toLong(),
+            lastUpdatedAt = System.currentTimeMillis(),
         )
         return parsed to updated
     }
