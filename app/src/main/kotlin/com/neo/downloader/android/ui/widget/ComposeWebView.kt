@@ -18,6 +18,7 @@ package com.neo.downloader.android.ui.widget
 import android.content.Context
 import android.graphics.Bitmap
 import android.os.Bundle
+import android.view.View
 import android.view.ViewGroup.LayoutParams
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
@@ -25,6 +26,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.runtime.Composable
@@ -82,6 +84,8 @@ public fun WebView(
     modifier: Modifier = Modifier,
     captureBackPresses: Boolean = true,
     navigator: WebViewNavigator = rememberWebViewNavigator(),
+    enablePullToRefresh: Boolean = false,
+    onRefresh: (() -> Unit)? = null,
     onCreated: (WebView) -> Unit = {},
     onDispose: (WebView) -> Unit = {},
     client: AccompanistWebViewClient = remember { AccompanistWebViewClient() },
@@ -114,6 +118,8 @@ public fun WebView(
             Modifier,
             captureBackPresses,
             navigator,
+            enablePullToRefresh,
+            onRefresh,
             onCreated,
             onDispose,
             client,
@@ -155,6 +161,8 @@ public fun WebView(
     modifier: Modifier = Modifier,
     captureBackPresses: Boolean = true,
     navigator: WebViewNavigator = rememberWebViewNavigator(),
+    enablePullToRefresh: Boolean = false,
+    onRefresh: (() -> Unit)? = null,
     onCreated: (WebView) -> Unit = {},
     onDispose: (WebView) -> Unit = {},
     client: AccompanistWebViewClient = remember { AccompanistWebViewClient() },
@@ -215,7 +223,7 @@ public fun WebView(
 
     AndroidView(
         factory = { context ->
-            (factory?.invoke(context) ?: WebView(context)).apply {
+            val webView = (factory?.invoke(context) ?: WebView(context)).apply {
                 onCreated(this)
 
                 this.layoutParams = layoutParams
@@ -227,10 +235,46 @@ public fun WebView(
                 webChromeClient = chromeClient
                 webViewClient = client
             }.also { state.webView = it }
+
+            if (enablePullToRefresh) {
+                SwipeRefreshLayout(context).apply {
+                    this.layoutParams = layoutParams
+                    addView(
+                        webView,
+                        FrameLayout.LayoutParams(
+                            LayoutParams.MATCH_PARENT,
+                            LayoutParams.MATCH_PARENT
+                        )
+                    )
+                    setOnChildScrollUpCallback { _, _ ->
+                        webView.canScrollVertically(-1)
+                    }
+                    setOnRefreshListener {
+                        onRefresh?.invoke() ?: navigator.reload()
+                    }
+                }
+            } else {
+                webView
+            }
         },
         modifier = modifier.clipToBounds(),
+        update = { root ->
+            if (root is SwipeRefreshLayout) {
+                root.isRefreshing = state.loadingState is LoadingState.Loading
+            }
+        },
         onRelease = {
-            onDispose(it)
+            when (it) {
+                is WebView -> onDispose(it)
+                is SwipeRefreshLayout -> {
+                    val webView = (0 until it.childCount)
+                        .asSequence()
+                        .mapNotNull { index -> it.getChildAt(index) as? WebView }
+                        .firstOrNull()
+                    webView?.let(onDispose)
+                }
+                is View -> Unit
+            }
         }
     )
 }

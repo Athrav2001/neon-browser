@@ -36,6 +36,7 @@ composeNativeTray = "1.1.0"
 agp = "8.12.3"
 androidx-core = "1.17.0"
 androidx-activity-compose = "1.12.4"
+androidx-swipeRefreshLayout = "1.1.0"
 
 [libraries]
 
@@ -111,6 +112,7 @@ arrow-opticKsp = { module = "io.arrow-kt:arrow-optics-ksp-plugin", version.ref =
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidx-core" }
 androidx-datastore = { module = "androidx.datastore:datastore", version.ref = "datastore" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity-compose" }
+androidx-swipeRefreshLayout = { module = "androidx.swiperefreshlayout:swiperefreshlayout", version.ref = "androidx-swipeRefreshLayout" }
 
 osThemeDetector = { module = "com.github.Dansoftowner:jSystemThemeDetector", version.ref = "osThemeDetector" }
 markdownRenderer-core = { module = "com.mikepenz:multiplatform-markdown-renderer", version.ref = "markdownRenderer" }

@@ -20,6 +20,10 @@ fun NDMWebView(
             modifier = modifier,
             captureBackPresses = false,
             navigator = navigator,
+            enablePullToRefresh = true,
+            onRefresh = {
+                navigator.reload()
+            },
             client = webViewHolder.client,
             chromeClient = webViewHolder.chromeClient,
             onDispose = {

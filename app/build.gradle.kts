@@ -63,6 +63,7 @@ dependencies {
     implementation(libs.compose.runtime)
     implementation(libs.compose.foundation)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.swipeRefreshLayout)
     implementation(libs.decompose.jbCompose)
     implementation(libs.aboutLibraries.core)
     implementation(project(":shared:app"))

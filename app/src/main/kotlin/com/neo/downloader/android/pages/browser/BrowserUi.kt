@@ -26,7 +26,9 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
@@ -72,7 +74,6 @@ import com.neo.downloader.shared.ui.widget.CheckBox
 import com.neo.downloader.shared.ui.widget.MyTextField
 import com.neo.downloader.shared.ui.widget.Text
 import com.neo.downloader.shared.ui.widget.TransparentIconActionButton
-import com.neo.downloader.shared.util.ClipboardUtil
 import com.neo.downloader.shared.util.ResponsiveDialog
 import com.neo.downloader.shared.util.div
 import com.neo.downloader.shared.util.rememberResponsiveDialogState
@@ -108,6 +109,7 @@ fun BrowserPage(
     val pendingPopupWindow by browserComponent.pendingPopupWindow.collectAsState()
     var previousUserAgent by remember { mutableStateOf<String?>(null) }
     val tab = tabs.activeTab
+    val bookmarks by browserComponent.bookmarks.collectAsState()
     val tabWebViewHolder = remember(tab?.tabId) {
         tab?.let {
             viewRegistry.getWebViewHolder(it)
@@ -191,15 +193,17 @@ fun BrowserPage(
                     .fillMaxSize()
                     .background(myColors.background)
                     .padding(it.paddingValues),
-                onRequestOpenUrlFromClipboard = {
-                    ClipboardUtil.read()?.let {
-                        browserComponent.newTab(
-                            browserComponent.createNewUrlFor(it)
-                        )
-                    }
+                bookmarks = bookmarks,
+                onRequestSearch = { query ->
+                    val url = browserComponent.createNewUrlFor(query)
+                    browserComponent.newTab(url)
                 },
-                onRequestOpenBookmarks = {
-                    browserComponent.setShowBookmarkList(true)
+                onRequestOpenBookmark = { bookmark ->
+                    val url = browserComponent.createNewUrlFor(bookmark.url)
+                    browserComponent.newTab(url)
+                },
+                onRequestAddBookmark = {
+                    browserComponent.promptAddBookmark(BrowserBookmark("", ""))
                 }
             )
         }
@@ -273,7 +277,7 @@ fun BrowserPage(
                 ?.loadUrl(newLink)
                 ?: browserComponent.newTab(newLink)
         },
-        bookmarks = browserComponent.bookmarks.collectAsState().value,
+        bookmarks = bookmarks,
         onRequestEditBookmark = browserComponent::promptEditBookmark,
         onRequestNewBookmark = {
             browserComponent.promptAddBookmark((BrowserBookmark("", "")))
@@ -701,44 +705,112 @@ private fun GrabberBulkDownloadSheet(
 @Composable
 fun EmptyPage(
     modifier: Modifier,
-    onRequestOpenUrlFromClipboard: () -> Unit,
-    onRequestOpenBookmarks: () -> Unit,
+    bookmarks: List<BrowserBookmark>,
+    onRequestSearch: (String) -> Unit,
+    onRequestOpenBookmark: (BrowserBookmark) -> Unit,
+    onRequestAddBookmark: () -> Unit,
 ) {
+    var query by remember { mutableStateOf("") }
+    fun submitSearch() {
+        val text = query.trim()
+        if (text.isEmpty()) return
+        onRequestSearch(text)
+    }
     Box(modifier) {
         Column(
-            modifier = Modifier.align(Alignment.Center),
+            modifier = Modifier
+                .align(Alignment.Center)
+                .fillMaxWidth()
+                .padding(horizontal = mySpacings.largeSpace),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
-                myStringResource(Res.string.browser_no_tab_open),
-                maxLines = 1,
+                "Google",
+                fontSize = myTextSizes.x5l,
+                fontWeight = FontWeight.Bold,
             )
             Spacer(Modifier.height(mySpacings.largeSpace))
-            ActionButton(
-                text = myStringResource(Res.string.browser_paste_and_go),
-                onClick = onRequestOpenUrlFromClipboard,
+            MyTextField(
+                text = query,
+                onTextChange = { query = it },
+                placeholder = "Search Google or type URL",
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Uri,
+                    imeAction = ImeAction.Search,
+                ),
+                keyboardActions = KeyboardActions(
+                    onSearch = { submitSearch() },
+                    onDone = { submitSearch() },
+                ),
                 start = {
                     MyIcon(
-                        MyIcons.paste,
+                        MyIcons.search,
                         null,
-                        Modifier.size(mySpacings.iconSize)
+                        Modifier
+                            .padding(start = mySpacings.mediumSpace)
+                            .size(mySpacings.iconSize)
                     )
-                    Spacer(Modifier.width(mySpacings.mediumSpace))
+                },
+                end = {
+                    TransparentIconActionButton(
+                        icon = MyIcons.search,
+                        contentDescription = Res.string.search.asStringSource(),
+                        onClick = ::submitSearch,
+                    )
                 }
             )
             Spacer(Modifier.height(mySpacings.largeSpace))
-            ActionButton(
-                text = myStringResource(Res.string.browser_bookmarks),
-                onClick = onRequestOpenBookmarks,
-                start = {
-                    MyIcon(
-                        MyIcons.hearth,
-                        null,
-                        Modifier.size(mySpacings.iconSize)
-                    )
-                    Spacer(Modifier.width(mySpacings.mediumSpace))
+            if (bookmarks.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .size(60.dp)
+                        .clip(CircleShape)
+                        .border(1.dp, myColors.onBackground / 0.25f, CircleShape)
+                        .clickable(onClick = onRequestAddBookmark),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    MyIcon(MyIcons.add, null, Modifier.size(mySpacings.iconSize))
                 }
-            )
+            } else {
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    items(bookmarks) { bookmark ->
+                        Box(
+                            modifier = Modifier
+                                .padding(horizontal = mySpacings.smallSpace)
+                                .size(56.dp)
+                                .clip(CircleShape)
+                                .border(1.dp, myColors.onBackground / 0.25f, CircleShape)
+                                .clickable { onRequestOpenBookmark(bookmark) },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            val label = bookmark.title.ifBlank { bookmark.url }
+                                .trim()
+                                .firstOrNull()
+                                ?.uppercaseChar()
+                                ?.toString()
+                                ?: "•"
+                            Text(label, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .padding(horizontal = mySpacings.smallSpace)
+                                .size(56.dp)
+                                .clip(CircleShape)
+                                .border(1.dp, myColors.onBackground / 0.25f, CircleShape)
+                                .clickable(onClick = onRequestAddBookmark),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            MyIcon(MyIcons.add, null, Modifier.size(mySpacings.iconSize))
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -953,9 +1025,10 @@ fun AddressBar(
                         .padding(12.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    MyIcon(
-                        icon = MyIcons.activeCount,
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_browser_tabs_nav),
                         contentDescription = Res.string.browser_tabs.asStringSource().rememberString(),
+                        colorFilter = ColorFilter.tint(LocalContentColor.current),
                         modifier = Modifier.size(mySpacings.iconSize),
                     )
                     Text(
