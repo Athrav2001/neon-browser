@@ -79,6 +79,7 @@ http4k-server-jetty = { module = "org.http4k:http4k-server-jetty", version.ref =
 http4k-client-okhttp = { module = "org.http4k:http4k-client-okhttp", version.ref = "http4k" }
 
 compose-material-rippleEffect = { module = "org.jetbrains.compose.material:material-ripple", version.ref = "compose" }
+compose-material-iconsExtended = { module = "org.jetbrains.compose.material:material-icons-extended", version.ref = "compose" }
 compose-reorderable = { module = "sh.calvin.reorderable:reorderable", version.ref = "reorderable" }
 
 compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "compose" }
@@ -129,4 +130,3 @@ kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", versi
 
 buildConfig = { id = "com.github.gmazzo.buildconfig", version.ref = "buildConfig" }
 changeLog = { id = "org.jetbrains.changelog", version.ref = "changelog" }
-

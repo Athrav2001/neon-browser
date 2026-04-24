@@ -3,7 +3,6 @@ package com.neo.downloader.android.pages.home
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -24,10 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import com.neo.downloader.android.R
 import com.neo.downloader.resources.Res
 import com.neo.downloader.shared.util.div
 import com.neo.downloader.shared.util.ui.icon.MyIcons
@@ -84,7 +80,6 @@ fun BottomNavigation(
             ) {
                 BottonNavigationItem(
                     icon = MyIcons.earth,
-                    drawableRes = R.drawable.ic_ms_public_24,
                     contentDescription = Res.string.browser.asStringSource(),
                     onClick = component::openBrowser,
                     modifier = Modifier.weight(1f),
@@ -172,7 +167,6 @@ fun BottomNavigation(
 @Composable
 private fun BottonNavigationItem(
     icon: IconSource,
-    drawableRes: Int? = null,
     contentDescription: StringSource,
     onClick: () -> Unit,
     modifier: Modifier,
@@ -183,26 +177,14 @@ private fun BottonNavigationItem(
         modifier = modifier,
         contentAlignment = Alignment.Center,
     ) {
-        if (drawableRes != null) {
-            Image(
-                painter = painterResource(drawableRes),
-                contentDescription = contentDescription.rememberString(),
-                colorFilter = ColorFilter.tint(myColors.onSurface),
-                modifier = Modifier
-                    .clickable(onClick = onClick)
-                    .padding(BottomNavigationConstants.DEFAULT_ICON_PADDING.dp)
-                    .size(iconSize),
-            )
-        } else {
-            MyIcon(
-                icon = icon,
-                contentDescription = contentDescription.rememberString(),
-                modifier = Modifier
-                    .clickable(onClick = onClick)
-                    .padding(BottomNavigationConstants.DEFAULT_ICON_PADDING.dp)
-                    .size(iconSize)
-            )
-        }
+        MyIcon(
+            icon = icon,
+            contentDescription = contentDescription.rememberString(),
+            modifier = Modifier
+                .clickable(onClick = onClick)
+                .padding(BottomNavigationConstants.DEFAULT_ICON_PADDING.dp)
+                .size(iconSize)
+        )
         BottomNavigationSelectedIndicator(isSelected)
     }
 }
