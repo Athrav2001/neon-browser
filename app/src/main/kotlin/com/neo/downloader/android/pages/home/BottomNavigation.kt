@@ -79,11 +79,12 @@ fun BottomNavigation(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 BottonNavigationItem(
-                    icon = MyIcons.browserIntegration,
+                    icon = MyIcons.earth,
                     contentDescription = Res.string.browser.asStringSource(),
                     onClick = component::openBrowser,
                     modifier = Modifier.weight(1f),
                     isSelected = false,
+                    iconSize = 18.dp,
                 )
                 Spacer(
                     Modifier
@@ -170,6 +171,7 @@ private fun BottonNavigationItem(
     onClick: () -> Unit,
     modifier: Modifier,
     isSelected: Boolean,
+    iconSize: androidx.compose.ui.unit.Dp = BottomNavigationConstants.DEFAULT_ICON_SIZE.dp,
 ) {
     Box(modifier) {
         MyIcon(
@@ -178,7 +180,7 @@ private fun BottonNavigationItem(
             modifier = Modifier
                 .clickable(onClick = onClick)
                 .padding(BottomNavigationConstants.DEFAULT_ICON_PADDING.dp)
-                .size(BottomNavigationConstants.DEFAULT_ICON_SIZE.dp)
+                .size(iconSize)
         )
         BottomNavigationSelectedIndicator(isSelected)
     }
