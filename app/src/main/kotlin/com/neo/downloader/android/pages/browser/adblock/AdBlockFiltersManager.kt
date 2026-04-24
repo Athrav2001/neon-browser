@@ -283,11 +283,16 @@ class AdBlockFiltersManager(
             if (line.isEmpty()) return@forEach
             if (line.startsWith("!") || line.startsWith("#")) return@forEach
             if (line.startsWith("@@")) return@forEach
-
-            if (line.startsWith("||")) {
-                extractHostFromAbpLine(line)?.let { hosts.add(it) }
-                return@forEach
-            }
+            // Avoid converting ABP/uBO filter syntax into host blocks.
+            // This parser intentionally supports only hosts-format and plain domains.
+            if (
+                line.startsWith("||") ||
+                line.contains("##") ||
+                line.contains("#@#") ||
+                line.contains('$') ||
+                line.contains('*') ||
+                line.contains('^')
+            ) return@forEach
 
             // hosts file style: 0.0.0.0 example.com
             if (line.contains(' ')) {
@@ -300,14 +305,6 @@ class AdBlockFiltersManager(
             normalizeHost(line)?.let { hosts.add(it) }
         }
         return hosts
-    }
-
-    private fun extractHostFromAbpLine(line: String): String? {
-        val body = line.removePrefix("||")
-        val hostRaw = body.takeWhile { ch ->
-            ch != '^' && ch != '/' && ch != '$' && ch != '?' && ch != '#'
-        }
-        return normalizeHost(hostRaw)
     }
 
     private fun normalizeHost(value: String): String? {
