@@ -167,25 +167,31 @@ class AdBlockFiltersManager(
         val hosts = linkedSetOf<String>()
         val currentSources = sourceStorage.sourcesFlow.value
         val updatedSources = mutableListOf<AdBlockFilterSource>()
+        val removedSourceIds = mutableSetOf<String>()
         currentSources
             .filter { it.enabled }
             .forEach { source ->
-                val (sourceHosts, updatedSource) = loadOrUpdateHosts(source)
+                val (sourceHosts, updatedSource, shouldRemove) = loadOrUpdateHosts(source)
+                if (shouldRemove) {
+                    removedSourceIds.add(source.id)
+                    sourceCacheFile(source.id).delete()
+                    return@forEach
+                }
                 updatedSources.add(updatedSource)
                 sourceHosts.forEach { host ->
                     hosts.add(host)
                 }
             }
-        if (updatedSources.isNotEmpty()) {
+        if (updatedSources.isNotEmpty() || removedSourceIds.isNotEmpty()) {
             val updatesById = updatedSources.associateBy { it.id }
             sourceStorage.sourcesFlow.value = currentSources.map { original ->
                 updatesById[original.id] ?: original
-            }
+            }.filterNot { it.id in removedSourceIds }
         }
         return hosts
     }
 
-    private fun loadOrUpdateHosts(source: AdBlockFilterSource): Pair<Set<String>, AdBlockFilterSource> {
+    private fun loadOrUpdateHosts(source: AdBlockFilterSource): Triple<Set<String>, AdBlockFilterSource, Boolean> {
         val cacheFile = sourceCacheFile(source.id)
         val currentMeta = fetchRemoteMetadata(source.url)
         val remoteEtag = currentMeta?.first?.takeIf { it.isNotBlank() }
@@ -206,33 +212,17 @@ class AdBlockFiltersManager(
                 .map { it.trim().lowercase(Locale.US) }
                 .filter { it.isNotEmpty() }
                 .toSet()
-            return fromCache to source
+            return Triple(fromCache, source, false)
         }
 
         val bytes = runCatching { URL(source.url).openStream().use { it.readBytes() } }
             .getOrNull()
         if (bytes == null) {
-            val fromCache = if (hasCache) {
-                readLinesSafely(cacheFile)
-                    .orEmpty()
-                    .asSequence()
-                    .map { it.trim().lowercase(Locale.US) }
-                    .filter { it.isNotEmpty() }
-                    .toSet()
-            } else {
-                emptySet()
-            }
-            return fromCache to source
+            return Triple(emptySet(), source, true)
         }
         val parsed = parseBytesToHosts(bytes)
-        if (parsed.isEmpty() && hasCache) {
-            val fromCache = readLinesSafely(cacheFile)
-                .orEmpty()
-                .asSequence()
-                .map { it.trim().lowercase(Locale.US) }
-                .filter { it.isNotEmpty() }
-                .toSet()
-            return fromCache to source
+        if (parsed.isEmpty()) {
+            return Triple(emptySet(), source, true)
         }
         writeTextSafely(cacheFile, parsed.joinToString("\n"))
         val updated = source.copy(
@@ -241,7 +231,7 @@ class AdBlockFiltersManager(
             downloadedBytes = bytes.size.toLong(),
             lastUpdatedAt = System.currentTimeMillis(),
         )
-        return parsed to updated
+        return Triple(parsed, updated, false)
     }
 
     private fun sourceCacheFile(sourceId: String): File {
