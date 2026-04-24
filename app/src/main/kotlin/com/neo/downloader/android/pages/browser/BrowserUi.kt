@@ -177,6 +177,14 @@ fun BrowserPage(
                             browserComponent = browserComponent,
                             currentWebViewHolder = tabWebViewHolder,
                             tabs = tabs,
+                            bookmarks = bookmarks,
+                            onRequestOpenBookmark = { bookmark ->
+                                val url = browserComponent.createNewUrlFor(bookmark.url)
+                                browserComponent.newTab(url)
+                            },
+                            onRequestAddBookmark = {
+                                browserComponent.promptAddBookmark(BrowserBookmark("", ""))
+                            },
                             modifier = Modifier,
                         )
                     }
@@ -198,18 +206,10 @@ fun BrowserPage(
                     .fillMaxSize()
                     .background(myColors.background)
                     .padding(it.paddingValues),
-                bookmarks = bookmarks,
                 onRequestSearch = { query ->
                     val url = browserComponent.createNewUrlFor(query)
                     browserComponent.newTab(url)
                 },
-                onRequestOpenBookmark = { bookmark ->
-                    val url = browserComponent.createNewUrlFor(bookmark.url)
-                    browserComponent.newTab(url)
-                },
-                onRequestAddBookmark = {
-                    browserComponent.promptAddBookmark(BrowserBookmark("", ""))
-                }
             )
         }
     }
@@ -710,10 +710,7 @@ private fun GrabberBulkDownloadSheet(
 @Composable
 fun EmptyPage(
     modifier: Modifier,
-    bookmarks: List<BrowserBookmark>,
     onRequestSearch: (String) -> Unit,
-    onRequestOpenBookmark: (BrowserBookmark) -> Unit,
-    onRequestAddBookmark: () -> Unit,
 ) {
     var query by remember { mutableStateOf("") }
     fun submitSearch() {
@@ -765,67 +762,6 @@ fun EmptyPage(
                     )
                 }
             )
-            Spacer(Modifier.height(mySpacings.largeSpace))
-            if (bookmarks.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .size(60.dp)
-                        .clip(CircleShape)
-                        .border(1.dp, myColors.onBackground / 0.25f, CircleShape)
-                        .clickable(onClick = onRequestAddBookmark),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    MyIcon(MyIcons.add, null, Modifier.size(mySpacings.iconSize))
-                }
-            } else {
-                LazyRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    items(bookmarks) { bookmark ->
-                        Column(
-                            modifier = Modifier
-                                .padding(horizontal = mySpacings.smallSpace),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(56.dp)
-                                    .clip(CircleShape)
-                                    .border(1.dp, myColors.onBackground / 0.25f, CircleShape)
-                                    .clickable { onRequestOpenBookmark(bookmark) },
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                BookmarkSiteIcon(
-                                    bookmark = bookmark,
-                                    size = 28.dp,
-                                )
-                            }
-                            Spacer(Modifier.height(4.dp))
-                            Text(
-                                text = bookmarkDisplayName(bookmark),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                fontSize = myTextSizes.xs,
-                                modifier = Modifier.width(56.dp),
-                            )
-                        }
-                    }
-                    item {
-                        Box(
-                            modifier = Modifier
-                                .padding(horizontal = mySpacings.smallSpace)
-                                .size(56.dp)
-                                .clip(CircleShape)
-                                .border(1.dp, myColors.onBackground / 0.25f, CircleShape)
-                                .clickable(onClick = onRequestAddBookmark),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            MyIcon(MyIcons.add, null, Modifier.size(mySpacings.iconSize))
-                        }
-                    }
-                }
-            }
         }
     }
 }
@@ -848,6 +784,81 @@ private fun bookmarkDisplayName(bookmark: BrowserBookmark): String {
         ?: runCatching { java.net.URI("https://${bookmark.url}").host }.getOrNull()
         ?: return bookmark.url
     return host.removePrefix("www.")
+}
+
+@Composable
+private fun BookmarkQuickRow(
+    bookmarks: List<BrowserBookmark>,
+    onRequestOpenBookmark: (BrowserBookmark) -> Unit,
+    onRequestAddBookmark: () -> Unit,
+) {
+    if (bookmarks.isEmpty()) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(60.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(60.dp)
+                    .clip(CircleShape)
+                    .border(1.dp, myColors.onBackground / 0.25f, CircleShape)
+                    .clickable(onClick = onRequestAddBookmark),
+                contentAlignment = Alignment.Center,
+            ) {
+                MyIcon(MyIcons.add, null, Modifier.size(mySpacings.iconSize))
+            }
+        }
+        return
+    }
+    LazyRow(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        items(bookmarks) { bookmark ->
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = mySpacings.smallSpace),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(CircleShape)
+                        .border(1.dp, myColors.onBackground / 0.25f, CircleShape)
+                        .clickable { onRequestOpenBookmark(bookmark) },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    BookmarkSiteIcon(
+                        bookmark = bookmark,
+                        size = 28.dp,
+                    )
+                }
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = bookmarkDisplayName(bookmark),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    fontSize = myTextSizes.xs,
+                    modifier = Modifier.width(56.dp),
+                )
+            }
+        }
+        item {
+            Box(
+                modifier = Modifier
+                    .padding(horizontal = mySpacings.smallSpace)
+                    .size(56.dp)
+                    .clip(CircleShape)
+                    .border(1.dp, myColors.onBackground / 0.25f, CircleShape)
+                    .clickable(onClick = onRequestAddBookmark),
+                contentAlignment = Alignment.Center,
+            ) {
+                MyIcon(MyIcons.add, null, Modifier.size(mySpacings.iconSize))
+            }
+        }
+    }
 }
 
 @Composable
@@ -1006,12 +1017,16 @@ fun AddressBar(
     browserComponent: BrowserComponent,
     currentWebViewHolder: WebViewHolder?,
     tabs: NDMTabs,
+    bookmarks: List<BrowserBookmark>,
+    onRequestOpenBookmark: (BrowserBookmark) -> Unit,
+    onRequestAddBookmark: () -> Unit,
     modifier: Modifier,
 ) {
     val webViewState = currentWebViewHolder?.tab?.tabState
     val navigator = currentWebViewHolder?.navigator
     val currentURL = webViewState?.lastLoadedUrl
     val currentTitle = webViewState?.pageTitle
+    val isHomeLike = currentURL.isNullOrBlank() || currentURL.startsWith("about:blank", ignoreCase = true)
     var isTabListVisible by remember { mutableStateOf(false) }
 
     Column(
@@ -1034,6 +1049,14 @@ fun AddressBar(
                 }
             }
         )
+        if (isHomeLike) {
+            Spacer(Modifier.height(mySpacings.mediumSpace))
+            BookmarkQuickRow(
+                bookmarks = bookmarks,
+                onRequestOpenBookmark = onRequestOpenBookmark,
+                onRequestAddBookmark = onRequestAddBookmark,
+            )
+        }
         Spacer(Modifier.height(mySpacings.mediumSpace))
         Row(
             Modifier.fillMaxWidth(),
