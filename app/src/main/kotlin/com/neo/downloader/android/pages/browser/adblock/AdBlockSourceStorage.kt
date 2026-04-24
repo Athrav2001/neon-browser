@@ -30,12 +30,6 @@ class AdBlockSourceDatastoreStorage(
 fun defaultAdBlockSources(): List<AdBlockFilterSource> {
     return listOf(
         AdBlockFilterSource(
-            id = "idm_filters",
-            name = "IDM filters",
-            url = "https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/filters.txt",
-            enabled = true,
-        ),
-        AdBlockFilterSource(
             id = "easylist",
             name = "EasyList",
             url = "https://raw.githubusercontent.com/easylist/easylist/master/easylist/easylist_adservers.txt",
@@ -189,24 +183,6 @@ fun defaultAdBlockSources(): List<AdBlockFilterSource> {
             id = "stevenblack_hosts",
             name = "StevenBlack Hosts",
             url = "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts",
-            enabled = true,
-        ),
-        AdBlockFilterSource(
-            id = "hagezi_light",
-            name = "HaGeZi Light",
-            url = "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/hosts/light.txt",
-            enabled = true,
-        ),
-        AdBlockFilterSource(
-            id = "goodbye_ads",
-            name = "GoodbyeAds",
-            url = "https://raw.githubusercontent.com/jerryn70/GoodbyeAds/master/Hosts/GoodbyeAds.txt",
-            enabled = true,
-        ),
-        AdBlockFilterSource(
-            id = "ublock_filters",
-            name = "uBlock Filters",
-            url = "https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/filters.txt",
             enabled = true,
         ),
     )

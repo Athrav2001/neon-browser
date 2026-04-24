@@ -131,8 +131,16 @@ class AdBlockFiltersManager(
 
     private fun ensureSourcesBootstrapped() {
         val current = sourceStorage.sourcesFlow.value
+        val defaults = defaultAdBlockSources()
+        val defaultIds = defaults.map { it.id }.toSet()
         if (current.isEmpty()) {
-            sourceStorage.sourcesFlow.value = defaultAdBlockSources()
+            sourceStorage.sourcesFlow.value = defaults
+            return
+        }
+        val hasUnsupported = current.any { it.id !in defaultIds }
+        val missingRequired = defaults.any { required -> current.none { it.id == required.id } }
+        if (hasUnsupported || missingRequired) {
+            sourceStorage.sourcesFlow.value = defaults
             return
         }
         val oldIds = setOf("1dm_pack", "easylist", "adguard_mobile")
@@ -140,7 +148,7 @@ class AdBlockFiltersManager(
             source.url.contains("files.catbox.moe", ignoreCase = true)
         } || (current.size <= 3 && current.all { it.id in oldIds })
         if (needsMigration) {
-            sourceStorage.sourcesFlow.value = defaultAdBlockSources()
+            sourceStorage.sourcesFlow.value = defaults
         }
     }
 
