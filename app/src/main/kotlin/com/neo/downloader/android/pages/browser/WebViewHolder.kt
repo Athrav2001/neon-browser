@@ -199,8 +199,11 @@ class NDMWebViewClient(
 
     override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): WebResourceResponse? {
         if (request != null && isAdBlockEnabled()) {
+            if (request.isForMainFrame) {
+                return super.shouldInterceptRequest(view, request)
+            }
             val pageUrlFromHeaders = request.requestHeaders["Referer"]
-            if (isGoogleSearchCriticalRequest(request.url.toString(), pageUrlFromHeaders)) {
+            if (isCriticalBrowsingRequest(request.url.toString(), pageUrlFromHeaders)) {
                 return super.shouldInterceptRequest(view, request)
             }
             val shouldBlock = adBlocker.shouldBlock(
@@ -238,7 +241,7 @@ class NDMWebViewClient(
         return super.shouldInterceptRequest(view, request)
     }
 
-    private fun isGoogleSearchCriticalRequest(
+    private fun isCriticalBrowsingRequest(
         requestUrl: String,
         pageUrl: String?,
     ): Boolean {
@@ -248,10 +251,15 @@ class NDMWebViewClient(
             ?.let { runCatching { Uri.parse(it).host?.lowercase().orEmpty() }.getOrDefault("") }
             .orEmpty()
         val fromGooglePage = pageHost.contains("google.")
-        if (!fromGooglePage) return false
+        val fromYoutubePage = pageHost.contains("youtube.com") || pageHost.contains("youtu.be")
+        if (!fromGooglePage && !fromYoutubePage) return false
         return reqHost.contains("google.") ||
             reqHost.contains("gstatic.com") ||
-            reqHost.contains("googleapis.com")
+            reqHost.contains("googleapis.com") ||
+            reqHost.contains("youtube.com") ||
+            reqHost.contains("googlevideo.com") ||
+            reqHost.contains("ytimg.com") ||
+            reqHost.contains("youtubei.googleapis.com")
     }
 
     override fun shouldOverrideUrlLoading(

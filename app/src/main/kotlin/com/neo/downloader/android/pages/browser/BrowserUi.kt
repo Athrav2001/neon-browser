@@ -53,6 +53,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.neo.downloader.android.pages.browser.bookmark.BookmarkList
@@ -192,7 +193,7 @@ fun BrowserPage(
             }
         }
     ) {
-        if (tabWebViewHolder != null) {
+        if (tabWebViewHolder != null && !isBrowserHomeLike) {
             NDMWebView(
                 modifier = Modifier
                     .fillMaxSize()
@@ -840,22 +841,34 @@ private fun BookmarkQuickRow(
                     text = bookmarkDisplayName(bookmark),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
                     fontSize = myTextSizes.xs,
                     modifier = Modifier.width(56.dp),
                 )
             }
         }
         item {
-            Box(
+            Column(
                 modifier = Modifier
-                    .padding(horizontal = mySpacings.smallSpace)
-                    .size(56.dp)
-                    .clip(CircleShape)
-                    .border(1.dp, myColors.onBackground / 0.25f, CircleShape)
-                    .clickable(onClick = onRequestAddBookmark),
-                contentAlignment = Alignment.Center,
+                    .padding(horizontal = mySpacings.smallSpace),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                MyIcon(MyIcons.add, null, Modifier.size(mySpacings.iconSize))
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(CircleShape)
+                        .border(1.dp, myColors.onBackground / 0.25f, CircleShape)
+                        .clickable(onClick = onRequestAddBookmark),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    MyIcon(MyIcons.add, null, Modifier.size(mySpacings.iconSize))
+                }
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = "",
+                    fontSize = myTextSizes.xs,
+                    modifier = Modifier.width(56.dp),
+                )
             }
         }
     }
