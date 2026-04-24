@@ -1075,9 +1075,7 @@ fun AddressBar(
                 Box(
                     modifier = Modifier
                         .clickable {
-                            navigator
-                                ?.loadUrl(NDMBrowserTab.blankPage)
-                                ?: browserComponent.newTab(NDMBrowserTab.blankPage)
+                            browserComponent.goHome()
                         }
                         .padding(12.dp)
                 ) {
@@ -1153,10 +1151,12 @@ fun AddressBar(
         },
         onRequestNewTab = { requestedUrl ->
             isTabListVisible = false
+            val targetUrl = requestedUrl
+                ?.takeIf { it.isNotBlank() }
+                ?.let { browserComponent.createNewUrlFor(it) }
+                ?: NDMBrowserTab.blankPage
             browserComponent.newTab(
-                requestedUrl?.let {
-                    browserComponent.createNewUrlFor(it)
-                }
+                targetUrl
             )
         },
         tabs = tabs,

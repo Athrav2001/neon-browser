@@ -11,10 +11,10 @@ class AdBlocker {
     ): Boolean {
         if (isMainFrame) return false
         val requestHost = requestUrl.toHost() ?: return false
-        if (requestHost in alwaysBlockedHosts || alwaysBlockedHosts.any { requestHost.endsWith(".$it") }) {
+        if (hostInSetOrParent(requestHost, alwaysBlockedHosts)) {
             return true
         }
-        if (requestHost in dynamicHosts || dynamicHosts.any { requestHost.endsWith(".$it") }) {
+        if (hostInSetOrParent(requestHost, dynamicHosts)) {
             return true
         }
         val requestHostNoWww = requestHost.removePrefix("www.")
@@ -26,6 +26,17 @@ class AdBlocker {
 
     private fun String.toHost(): String? {
         return runCatching { java.net.URI(this).host?.lowercase(Locale.US) }.getOrNull()
+    }
+
+    private fun hostInSetOrParent(host: String, hostSet: Set<String>): Boolean {
+        if (hostSet.isEmpty()) return false
+        var candidate = host
+        while (true) {
+            if (hostSet.contains(candidate)) return true
+            val nextDot = candidate.indexOf('.')
+            if (nextDot < 0 || nextDot == candidate.lastIndex) return false
+            candidate = candidate.substring(nextDot + 1)
+        }
     }
 
     companion object {
