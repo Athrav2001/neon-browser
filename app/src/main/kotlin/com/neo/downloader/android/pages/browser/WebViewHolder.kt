@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Message
 import android.util.Log
 import android.webkit.CookieManager
+import android.webkit.PermissionRequest
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
@@ -463,6 +464,10 @@ class NDMChromeClient(
     private val browserComponent: BrowserComponent,
     private val createWebViewHolder: (tab: NDMBrowserTab) -> WebViewHolder,
 ) : AccompanistWebChromeClient() {
+    override fun onPermissionRequest(request: PermissionRequest?) {
+        request?.deny()
+    }
+
     override fun onCreateWindow(
         view: WebView?,
         isDialog: Boolean,

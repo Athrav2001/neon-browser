@@ -28,7 +28,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
@@ -53,7 +53,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.neo.downloader.android.pages.browser.bookmark.BookmarkList
@@ -778,33 +777,26 @@ private fun BookmarkSiteIcon(
     )
 }
 
-private fun bookmarkDisplayName(bookmark: BrowserBookmark): String {
-    val title = bookmark.title.trim()
-    if (title.isNotEmpty()) return title
-    val host = runCatching { java.net.URI(bookmark.url).host }.getOrNull()
-        ?: runCatching { java.net.URI("https://${bookmark.url}").host }.getOrNull()
-        ?: return bookmark.url
-    return host.removePrefix("www.")
-}
-
 @Composable
 private fun BookmarkQuickRow(
     bookmarks: List<BrowserBookmark>,
     onRequestOpenBookmark: (BrowserBookmark) -> Unit,
     onRequestAddBookmark: () -> Unit,
 ) {
+    val itemShape = RoundedCornerShape(14.dp)
+    val itemSize = 56.dp
     if (bookmarks.isEmpty()) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(60.dp),
+                .height(itemSize),
             contentAlignment = Alignment.Center,
         ) {
             Box(
                 modifier = Modifier
-                    .size(60.dp)
-                    .clip(CircleShape)
-                    .border(1.dp, myColors.onBackground / 0.25f, CircleShape)
+                    .size(itemSize)
+                    .clip(itemShape)
+                    .border(1.dp, myColors.onBackground / 0.25f, itemShape)
                     .clickable(onClick = onRequestAddBookmark),
                 contentAlignment = Alignment.Center,
             ) {
@@ -818,57 +810,32 @@ private fun BookmarkQuickRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         items(bookmarks) { bookmark ->
-            Column(
+            Box(
                 modifier = Modifier
-                    .padding(horizontal = mySpacings.smallSpace),
-                horizontalAlignment = Alignment.CenterHorizontally,
+                    .padding(horizontal = mySpacings.smallSpace)
+                    .size(itemSize)
+                    .clip(itemShape)
+                    .border(1.dp, myColors.onBackground / 0.25f, itemShape)
+                    .clickable { onRequestOpenBookmark(bookmark) },
+                contentAlignment = Alignment.Center,
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(56.dp)
-                        .clip(CircleShape)
-                        .border(1.dp, myColors.onBackground / 0.25f, CircleShape)
-                        .clickable { onRequestOpenBookmark(bookmark) },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    BookmarkSiteIcon(
-                        bookmark = bookmark,
-                        size = 28.dp,
-                    )
-                }
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = bookmarkDisplayName(bookmark),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Center,
-                    fontSize = myTextSizes.xs,
-                    modifier = Modifier.width(56.dp),
+                BookmarkSiteIcon(
+                    bookmark = bookmark,
+                    size = 28.dp,
                 )
             }
         }
         item {
-            Column(
+            Box(
                 modifier = Modifier
-                    .padding(horizontal = mySpacings.smallSpace),
-                horizontalAlignment = Alignment.CenterHorizontally,
+                    .padding(horizontal = mySpacings.smallSpace)
+                    .size(itemSize)
+                    .clip(itemShape)
+                    .border(1.dp, myColors.onBackground / 0.25f, itemShape)
+                    .clickable(onClick = onRequestAddBookmark),
+                contentAlignment = Alignment.Center,
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(56.dp)
-                        .clip(CircleShape)
-                        .border(1.dp, myColors.onBackground / 0.25f, CircleShape)
-                        .clickable(onClick = onRequestAddBookmark),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    MyIcon(MyIcons.add, null, Modifier.size(mySpacings.iconSize))
-                }
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = "",
-                    fontSize = myTextSizes.xs,
-                    modifier = Modifier.width(56.dp),
-                )
+                MyIcon(MyIcons.add, null, Modifier.size(mySpacings.iconSize))
             }
         }
     }
