@@ -19,6 +19,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.view.View
+import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
@@ -235,6 +236,10 @@ public fun WebView(
                 webChromeClient = chromeClient
                 webViewClient = client
             }.also { state.webView = it }
+
+            // The holder can reuse an existing WebView instance across recompositions/screens.
+            // AndroidView/SwipeRefreshLayout must own an unattached child, so detach first.
+            (webView.parent as? ViewGroup)?.removeView(webView)
 
             if (enablePullToRefresh) {
                 SwipeRefreshLayout(context).apply {
