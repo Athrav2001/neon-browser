@@ -456,13 +456,18 @@ class BrowserComponent(
         val session = sessionManager.current()
         val restoredTabs = session.tabs.mapNotNull { tab ->
             val tabId = tab.tabId.ifBlank { UUID.randomUUID().toString() }
-            val content = WebContent.fromNullableUrl(tab.url)
+            val content = WebContent.fromNullableUrl(tab.url ?: NDMBrowserTab.blankPage)
             NDMBrowserTab(
                 tabId = tabId,
                 tabState = WebViewState(content),
             )
         }
-        if (restoredTabs.isEmpty()) return NDMTabs.createDefault()
+        if (restoredTabs.isEmpty()) {
+            return NDMTabs(
+                tabs = listOf(NDMBrowserTab.createDefaultTab()),
+                activeTabIndex = 0,
+            )
+        }
         val restoredIndex = restoredTabs.indexOfFirst { it.tabId == session.activeTabId }
             .takeIf { it >= 0 } ?: 0
         return NDMTabs(
@@ -558,7 +563,7 @@ class BrowserComponent(
             icon = MyIcons.file,
         ) {
             newTab(
-                url = null,
+                url = NDMBrowserTab.blankPage,
                 switch = true,
             )
         }
@@ -702,7 +707,7 @@ data class NDMBrowserTab(
             tabState = WebViewState(WebContent.Url(page)),
         )
 
-        val blankPage = "about:blank"
+        val blankPage = "https://www.google.com"
     }
 }
 

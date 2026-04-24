@@ -3,6 +3,7 @@ package com.neo.downloader.android.storage
 import androidx.datastore.core.DataStore
 import arrow.optics.Lens
 import arrow.optics.optics
+import com.neo.downloader.android.pages.browser.BrowserUserAgentPreset
 import com.neo.downloader.shared.storage.BaseAppSettingsStorage
 import com.neo.downloader.shared.storage.IAppSettingsModel
 import com.neo.downloader.shared.storage.SupportedSizeUnits
@@ -50,7 +51,7 @@ data class AppSettingsModel(
     override val speedUnit: SupportedSizeUnits = SupportedSizeUnits.BinaryBytes,
     override val ignoreSSLCertificates: Boolean = false,
     override val useCategoryByDefault: Boolean = true,
-    override val userAgent: String = "",
+    override val userAgent: String = BrowserUserAgentPreset.Android.value,
     override val browserAdBlockEnabled: Boolean = true,
     override val adBlockAutoUpdateEnabled: Boolean = true,
     override val adBlockLastUpdatedAt: Long = 0L,

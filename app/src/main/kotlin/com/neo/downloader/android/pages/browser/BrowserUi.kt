@@ -125,8 +125,13 @@ fun BrowserPage(
         tabWebViewHolder?.webView?.goBack()
     }
     BackHandler(!canGoBack && tab != null && (tabs.tabsSize > 1 || !isBrowserHomeLike)) {
-        tab?.let {
-            browserComponent.closeTab(it.tabId)
+        tab?.let { activeTab ->
+            if (tabs.tabsSize <= 1) {
+                tabWebViewHolder?.navigator?.loadUrl(NDMBrowserTab.blankPage)
+                    ?: browserComponent.newTab(NDMBrowserTab.blankPage)
+            } else {
+                browserComponent.closeTab(activeTab.tabId)
+            }
         }
     }
     LaunchedEffect(tabs) {
