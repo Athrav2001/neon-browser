@@ -74,6 +74,7 @@ import com.neo.downloader.shared.ui.widget.CheckBox
 import com.neo.downloader.shared.ui.widget.MyTextField
 import com.neo.downloader.shared.ui.widget.Text
 import com.neo.downloader.shared.ui.widget.TransparentIconActionButton
+import com.neo.downloader.shared.util.ClipboardUtil
 import com.neo.downloader.shared.util.ResponsiveDialog
 import com.neo.downloader.shared.util.div
 import com.neo.downloader.shared.util.rememberResponsiveDialogState
