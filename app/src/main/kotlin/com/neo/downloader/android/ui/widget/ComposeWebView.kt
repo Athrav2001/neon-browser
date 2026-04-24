@@ -171,6 +171,7 @@ public fun WebView(
     factory: ((Context) -> WebView)? = null,
 ) {
     val webView = state.webView
+    var pullRefreshTriggered by remember(enablePullToRefresh) { mutableStateOf(false) }
 
     BackHandler(captureBackPresses && navigator.canGoBack) {
         webView?.goBack()
@@ -255,6 +256,7 @@ public fun WebView(
                         webView.canScrollVertically(-1)
                     }
                     setOnRefreshListener {
+                        pullRefreshTriggered = true
                         onRefresh?.invoke() ?: navigator.reload()
                     }
                 }
@@ -265,7 +267,11 @@ public fun WebView(
         modifier = modifier.clipToBounds(),
         update = { root ->
             if (root is SwipeRefreshLayout) {
-                root.isRefreshing = state.loadingState is LoadingState.Loading
+                val isLoading = state.loadingState is LoadingState.Loading
+                if (!isLoading) {
+                    pullRefreshTriggered = false
+                }
+                root.isRefreshing = pullRefreshTriggered && isLoading
             }
         },
         onRelease = {

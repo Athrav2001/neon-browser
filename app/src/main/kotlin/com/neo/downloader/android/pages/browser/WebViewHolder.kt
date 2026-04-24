@@ -165,8 +165,6 @@ data class WebViewHolder(
 
     fun deactivate() {
         webView?.onPause()
-        // prevent reloading after activated again
-        tab.tabState.content = WebContent.NavigatorOnly
     }
 
     fun release() {
