@@ -48,7 +48,7 @@ kotlin {
 
             //because we don't have material design, but we use ripple effect
             implementation(libs.compose.material.rippleEffect)
-            implementation(libs.compose.material.iconsExtended)
+            implementation(compose.materialIconsExtended)
 
             // multiplatform scrollbars
             api(libs.fastscroller.core)
