@@ -57,6 +57,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.neo.downloader.android.pages.browser.bookmark.BookmarkList
 import com.neo.downloader.android.pages.browser.bookmark.EditBookmarkSheet
+import com.neo.downloader.android.pages.browser.bookmark.BookmarkFavicon
 import com.neo.browser.logic.history.NeoBrowserHistoryEntry
 import com.neo.downloader.android.R
 import com.neo.downloader.android.storage.BrowserBookmark
@@ -788,13 +789,10 @@ fun EmptyPage(
                                 .clickable { onRequestOpenBookmark(bookmark) },
                             contentAlignment = Alignment.Center,
                         ) {
-                            val label = bookmark.title.ifBlank { bookmark.url }
-                                .trim()
-                                .firstOrNull()
-                                ?.uppercaseChar()
-                                ?.toString()
-                                ?: "•"
-                            Text(label, fontWeight = FontWeight.Bold)
+                            BookmarkSiteIcon(
+                                bookmark = bookmark,
+                                size = 28.dp,
+                            )
                         }
                     }
                     item {
@@ -814,6 +812,17 @@ fun EmptyPage(
             }
         }
     }
+}
+
+@Composable
+private fun BookmarkSiteIcon(
+    bookmark: BrowserBookmark,
+    size: androidx.compose.ui.unit.Dp,
+) {
+    BookmarkFavicon(
+        bookmark = bookmark,
+        size = size,
+    )
 }
 
 @Composable

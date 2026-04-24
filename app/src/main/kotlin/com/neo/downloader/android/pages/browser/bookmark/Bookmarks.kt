@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -31,7 +30,6 @@ import com.neo.downloader.shared.util.ui.WithContentAlpha
 import com.neo.downloader.shared.util.ui.icon.MyIcons
 import com.neo.downloader.shared.util.ui.theme.mySpacings
 import com.neo.downloader.shared.util.ui.theme.myTextSizes
-import com.neo.downloader.shared.util.ui.widget.MyIcon
 import ir.amirab.util.compose.asStringSource
 import ir.amirab.util.compose.resources.myStringResource
 
@@ -94,11 +92,9 @@ fun BookmarkList(
                             .padding(vertical = 8.dp, horizontal = 16.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        val modifier = Modifier.size(24.dp)
-                        MyIcon(
-                            MyIcons.earth,
-                            contentDescription = null,
-                            modifier = modifier,
+                        BookmarkFavicon(
+                            bookmark = bookmark,
+                            size = 24.dp,
                         )
                         Spacer(Modifier.width(16.dp))
                         Column(
