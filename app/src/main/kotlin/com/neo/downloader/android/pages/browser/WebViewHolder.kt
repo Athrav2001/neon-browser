@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Message
 import android.util.Log
+import android.webkit.CookieManager
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
@@ -89,7 +90,14 @@ class WebViewRegistry(
             webView.settings.setSupportZoom(true)
             webView.settings.builtInZoomControls = false
             webView.settings.setSupportMultipleWindows(true)
+            webView.settings.javaScriptCanOpenWindowsAutomatically = true
             webView.settings.mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
+            webView.settings.loadsImagesAutomatically = true
+            webView.settings.allowFileAccess = true
+            webView.settings.allowContentAccess = true
+            webView.settings.mediaPlaybackRequiresUserGesture = false
+            CookieManager.getInstance().setAcceptCookie(true)
+            CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true)
             applyUserAgent(webView, browserComponent.getEffectiveUserAgent())
             webView.isLongClickable = true
             webView.setOnLongClickListener {
@@ -192,6 +200,9 @@ class NDMWebViewClient(
     override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): WebResourceResponse? {
         if (request != null && isAdBlockEnabled()) {
             val pageUrlFromHeaders = request.requestHeaders["Referer"]
+            if (isGoogleSearchCriticalRequest(request.url.toString(), pageUrlFromHeaders)) {
+                return super.shouldInterceptRequest(view, request)
+            }
             val shouldBlock = adBlocker.shouldBlock(
                 requestUrl = request.url.toString(),
                 pageUrl = pageUrlFromHeaders,
@@ -225,6 +236,22 @@ class NDMWebViewClient(
             }
         }
         return super.shouldInterceptRequest(view, request)
+    }
+
+    private fun isGoogleSearchCriticalRequest(
+        requestUrl: String,
+        pageUrl: String?,
+    ): Boolean {
+        val req = runCatching { Uri.parse(requestUrl) }.getOrNull() ?: return false
+        val reqHost = req.host?.lowercase().orEmpty()
+        val pageHost = pageUrl
+            ?.let { runCatching { Uri.parse(it).host?.lowercase().orEmpty() }.getOrDefault("") }
+            .orEmpty()
+        val fromGooglePage = pageHost.contains("google.")
+        if (!fromGooglePage) return false
+        return reqHost.contains("google.") ||
+            reqHost.contains("gstatic.com") ||
+            reqHost.contains("googleapis.com")
     }
 
     override fun shouldOverrideUrlLoading(

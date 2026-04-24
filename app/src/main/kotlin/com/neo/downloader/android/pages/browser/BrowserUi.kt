@@ -117,13 +117,16 @@ fun BrowserPage(
             viewRegistry.getWebViewHolder(it)
         }
     }
-    BackHandler(tabs.tabsSize > 1) {
-        tab?.let {
-            browserComponent.closeTab(tab.tabId)
-        }
-    }
-    BackHandler(tabWebViewHolder?.navigator?.canGoBack ?: false) {
+    val canGoBack = tabWebViewHolder?.navigator?.canGoBack ?: false
+    val currentUrl = tab?.tabState?.lastLoadedUrl
+    val isBrowserHomeLike = currentUrl.isNullOrBlank() || currentUrl.startsWith("about:blank", ignoreCase = true)
+    BackHandler(canGoBack) {
         tabWebViewHolder?.webView?.goBack()
+    }
+    BackHandler(!canGoBack && tab != null && (tabs.tabsSize > 1 || !isBrowserHomeLike)) {
+        tab?.let {
+            browserComponent.closeTab(it.tabId)
+        }
     }
     LaunchedEffect(tabs) {
         viewRegistry.onTabsUpdated(tabs)
@@ -780,18 +783,31 @@ fun EmptyPage(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     items(bookmarks) { bookmark ->
-                        Box(
+                        Column(
                             modifier = Modifier
-                                .padding(horizontal = mySpacings.smallSpace)
-                                .size(56.dp)
-                                .clip(CircleShape)
-                                .border(1.dp, myColors.onBackground / 0.25f, CircleShape)
-                                .clickable { onRequestOpenBookmark(bookmark) },
-                            contentAlignment = Alignment.Center,
+                                .padding(horizontal = mySpacings.smallSpace),
+                            horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
-                            BookmarkSiteIcon(
-                                bookmark = bookmark,
-                                size = 28.dp,
+                            Box(
+                                modifier = Modifier
+                                    .size(56.dp)
+                                    .clip(CircleShape)
+                                    .border(1.dp, myColors.onBackground / 0.25f, CircleShape)
+                                    .clickable { onRequestOpenBookmark(bookmark) },
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                BookmarkSiteIcon(
+                                    bookmark = bookmark,
+                                    size = 28.dp,
+                                )
+                            }
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text = bookmarkDisplayName(bookmark),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                fontSize = myTextSizes.xs,
+                                modifier = Modifier.width(56.dp),
                             )
                         }
                     }
@@ -823,6 +839,15 @@ private fun BookmarkSiteIcon(
         bookmark = bookmark,
         size = size,
     )
+}
+
+private fun bookmarkDisplayName(bookmark: BrowserBookmark): String {
+    val title = bookmark.title.trim()
+    if (title.isNotEmpty()) return title
+    val host = runCatching { java.net.URI(bookmark.url).host }.getOrNull()
+        ?: runCatching { java.net.URI("https://${bookmark.url}").host }.getOrNull()
+        ?: return bookmark.url
+    return host.removePrefix("www.")
 }
 
 @Composable
