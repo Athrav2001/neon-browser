@@ -1042,7 +1042,11 @@ fun AddressBar(
             BrowserBottomBarSlot {
                 Box(
                     modifier = Modifier
-                        .clickable(onClick = browserComponent::goHome)
+                        .clickable {
+                            navigator
+                                ?.loadUrl(NDMBrowserTab.blankPage)
+                                ?: browserComponent.newTab(NDMBrowserTab.blankPage)
+                        }
                         .padding(12.dp)
                 ) {
                     Image(
