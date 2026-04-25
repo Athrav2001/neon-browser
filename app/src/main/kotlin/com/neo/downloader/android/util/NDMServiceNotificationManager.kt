@@ -178,24 +178,28 @@ class NDMServiceNotificationManager(
                     flagOfPendingIntent,
                 )
             )
-            // actions
-            .setContentIntent(openMainActivityIntent)
-            .addAction(
-                0, exit, PendingIntent.getBroadcast(
-                    context,
-                    AndroidConstants.SERVICE_NOTIFICATION_ID,
-                    Intent(AndroidConstants.Intents.EXIT_ACTION),
-                    flagOfPendingIntent,
-                )
+// actions
+        .setContentIntent(openMainActivityIntent)
+        .addAction(
+            0, exit, PendingIntent.getBroadcast(
+                context,
+                AndroidConstants.SERVICE_NOTIFICATION_ID,
+                Intent(AndroidConstants.Intents.EXIT_ACTION).apply {
+                    setClassName(context.packageName, "com.neo.downloader.android.util.NDMAppManager")
+                },
+                flagOfPendingIntent,
             )
-            .addAction(
-                0, stopAll, PendingIntent.getBroadcast(
-                    context,
-                    AndroidConstants.SERVICE_NOTIFICATION_ID,
-                    Intent(AndroidConstants.Intents.STOP_ALL_ACTION),
-                    flagOfPendingIntent,
-                )
+        )
+        .addAction(
+            0, stopAll, PendingIntent.getBroadcast(
+                context,
+                AndroidConstants.SERVICE_NOTIFICATION_ID,
+                Intent(AndroidConstants.Intents.STOP_ALL_ACTION).apply {
+                    setClassName(context.packageName, "com.neo.downloader.android.util.NDMAppManager")
+                },
+                flagOfPendingIntent,
             )
+        )
             .build()
     }
 
