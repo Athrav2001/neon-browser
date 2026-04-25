@@ -103,14 +103,14 @@ class DownloadManager(
 
             val name = FileNameUtil.numberedIfExists(
                 File(newItem.folder, newItem.name)
-            ).first { candidateNewFile ->
+            ).firstOrNull { candidateNewFile ->
                 val withSameDestination = allDownloads
                     .filter { it !in removedItems }
                     .find {
                         it.name == candidateNewFile.name && it.folder == candidateNewFile.parent
                     }
                 withSameDestination == null
-            }.name
+            }?.name ?: newItem.name
 
             val id = dlListDb.getLastId() + 1
             val dateAdded = newItem.dateAdded

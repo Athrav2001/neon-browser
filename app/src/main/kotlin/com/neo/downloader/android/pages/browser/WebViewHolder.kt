@@ -90,8 +90,8 @@ class WebViewRegistry(
             webView.settings.domStorageEnabled = true
             webView.settings.setSupportZoom(true)
             webView.settings.builtInZoomControls = false
-            webView.settings.setSupportMultipleWindows(true)
-            webView.settings.javaScriptCanOpenWindowsAutomatically = true
+            webView.settings.setSupportMultipleWindows(false)
+            webView.settings.javaScriptCanOpenWindowsAutomatically = false
             webView.settings.mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
             webView.settings.loadsImagesAutomatically = true
             webView.settings.allowFileAccess = false
@@ -278,8 +278,8 @@ class NDMWebViewClient(
             return false
         }
 
-        // Block unknown schemes from page content.
-        val allowedExternalSchemes = setOf("tel", "sms", "mailto", "market", "intent")
+        // Strict scheme allowlist from page content.
+        val allowedExternalSchemes = setOf("tel", "sms", "mailto", "intent")
         if (scheme !in allowedExternalSchemes) {
             return true
         }
@@ -287,15 +287,10 @@ class NDMWebViewClient(
         if (scheme == "intent") {
             try {
                 val parsedIntent = Intent.parseUri(url, Intent.URI_INTENT_SCHEME)
-                val pm = view.context.packageManager
-
-                if (parsedIntent.resolveActivity(pm) != null) {
-                    view.context.startActivity(parsedIntent)
-                } else {
-                    parsedIntent.getStringExtra("browser_fallback_url")?.let {
-                        if (URLUtil.isNetworkUrl(it)) {
-                            view.loadUrl(it)
-                        }
+                // Never launch arbitrary intent payloads directly from web content.
+                parsedIntent.getStringExtra("browser_fallback_url")?.let {
+                    if (URLUtil.isNetworkUrl(it)) {
+                        view.loadUrl(it)
                     }
                 }
             } catch (e: Exception) {
