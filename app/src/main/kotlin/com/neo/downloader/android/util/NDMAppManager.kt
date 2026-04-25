@@ -251,7 +251,6 @@ class NDMAppManager(
                             Log.e("NDMAppManager", "RESUME_ACTION failed", e)
                         }
                     }
-                    }
 
                     AndroidConstants.Intents.TOGGLE_ACTION -> {
                         intent
@@ -269,34 +268,18 @@ class NDMAppManager(
                     }
 
                     AndroidConstants.Intents.STOP_ALL_ACTION -> {
-                        try {
-                            if (!isDownloadSystemBooted()) {
-                                android.util.Log.w("NDMAppManager", "STOP_ALL: system not booted yet")
-                                return@let
-                            }
-                            scope.launch {
-                                downloadSystem.stopAnything()
-                            }
-                        } catch (e: Exception) {
-                            android.util.Log.e("NDMAppManager", "STOP_ALL failed", e)
+                        scope.launch {
+                            downloadSystem.stopAnything()
                         }
                     }
 
                     AndroidConstants.Intents.EXIT_ACTION -> {
-                        try {
-                            if (!isDownloadSystemBooted()) {
-                                android.util.Log.w("NDMAppManager", "EXIT: system not booted yet")
-                            } else {
-                                val job = scope.launch {
-                                    downloadSystem.stopAnything()
-                                    stopOurService()
-                                }
-                                job.invokeOnCompletion {
-                                    exitProcess(0)
-                                }
-                            }
-                        } catch (e: Exception) {
-                            android.util.Log.e("NDMAppManager", "EXIT failed", e)
+                        val job = scope.launch {
+                            downloadSystem.stopAnything()
+                            stopOurService()
+                        }
+                        job.invokeOnCompletion {
+                            exitProcess(0)
                         }
                     }
                 }
