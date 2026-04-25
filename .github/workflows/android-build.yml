@@ -2,7 +2,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
@@ -35,50 +35,33 @@ jobs:
         run: |
           sdkmanager --install "platforms;android-36" "build-tools;36.1.0"
 
-      - name: Build Signed Release APK
+      - name: Build Debug APK
         shell: bash
-        env:
-          NDM_KEYSTORE_FILE: ${{ secrets.NDM_KEYSTORE_FILE }}
-          NDM_KEYSTORE_FILE_PASSWORD: ${{ secrets.NDM_KEYSTORE_FILE_PASSWORD }}
-          NDM_KEYSTORE_KEY_ALIAS: ${{ secrets.NDM_KEYSTORE_KEY_ALIAS }}
-          NDM_KEYSTORE_KEY_PASSWORD: ${{ secrets.NDM_KEYSTORE_KEY_PASSWORD }}
         run: |
-          ./gradlew :app:assembleRelease :app:createReleaseSignedBinaryRelease
+          ./gradlew :app:assembleDebug
 
       - name: Stop Gradle Daemons
         shell: bash
         run: |
           ./gradlew -stop
 
-      - name: Upload Android artifact (arm64-v8a signed release)
+      - name: Upload Android artifact (arm64-v8a)
         uses: actions/upload-artifact@v4
         with:
-          path: ./app/build/generatedSignedApks/*arm64-v8a*.apk
-          name: app-android-arm64-v8a-release
+          path: ./app/build/outputs/apk/debug/*arm64-v8a*.apk
+          name: app-android-arm64-v8a
           if-no-files-found: error
 
-      - name: Upload Android artifact (armeabi-v7a signed release)
+      - name: Upload Android artifact (armeabi-v7a)
         uses: actions/upload-artifact@v4
         with:
-          path: ./app/build/generatedSignedApks/*armeabi-v7a*.apk
-          name: app-android-armeabi-v7a-release
+          path: ./app/build/outputs/apk/debug/*armeabi-v7a*.apk
+          name: app-android-armeabi-v7a
           if-no-files-found: error
 
-      - name: Upload Android artifact (universal signed release)
+      - name: Upload Android artifact (universal)
         uses: actions/upload-artifact@v4
         with:
-          path: ./app/build/generatedSignedApks/*universal*.apk
-          name: app-android-universal-release
+          path: ./app/build/outputs/apk/debug/*universal*.apk
+          name: app-android-universal
           if-no-files-found: error
-
-      - name: Create GitHub Release and upload APKs
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: main-build-${{ github.run_number }}
-          name: Main Build ${{ github.run_number }}
-          generate_release_notes: true
-          prerelease: true
-          files: |
-            ./app/build/generatedSignedApks/*arm64-v8a*.apk
-            ./app/build/generatedSignedApks/*armeabi-v7a*.apk
-            ./app/build/generatedSignedApks/*universal*.apk
