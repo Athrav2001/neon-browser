@@ -37,6 +37,11 @@ jobs:
 
       - name: Build Signed Release APK
         shell: bash
+        env:
+          NDM_KEYSTORE_FILE: ${{ secrets.NDM_KEYSTORE_FILE }}
+          NDM_KEYSTORE_FILE_PASSWORD: ${{ secrets.NDM_KEYSTORE_FILE_PASSWORD }}
+          NDM_KEYSTORE_KEY_ALIAS: ${{ secrets.NDM_KEYSTORE_KEY_ALIAS }}
+          NDM_KEYSTORE_KEY_PASSWORD: ${{ secrets.NDM_KEYSTORE_KEY_PASSWORD }}
         run: |
           ./gradlew :app:assembleRelease :app:createReleaseSignedBinaryRelease
 
