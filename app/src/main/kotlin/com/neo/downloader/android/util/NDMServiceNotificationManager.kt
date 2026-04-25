@@ -8,6 +8,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.os.Build
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -145,11 +146,11 @@ class NDMServiceNotificationManager(
         reason: KeepAliveServiceReason?,
         statusString: String?,
     ): Notification {
-        val flagOfPendingIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
-            PendingIntent.FLAG_MUTABLE_IMMUTABLE or PendingIntent.FLAG_NO_ANIMATION
+        val flagOfPendingIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
         } else {
-            PendingIntent.FLAG_IMMUTABLE
-        } or PendingIntent.FLAG_UPDATE_CURRENT
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        }
         val serviceIsRunningText = Res.string.service_is_running.asStringSource().getString()
         val exit = Res.string.exit.asStringSource().getString()
         val stopAll = Res.string.stop_all.asStringSource().getString()
@@ -205,11 +206,11 @@ class NDMServiceNotificationManager(
     fun createDownloadItemNotification(
         downloadItemState: ProcessingDownloadItemState
     ): Notification {
-        val flagOfPendingIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
-            PendingIntent.FLAG_MUTABLE_IMMUTABLE or PendingIntent.FLAG_NO_ANIMATION
+        val flagOfPendingIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
         } else {
-            PendingIntent.FLAG_IMMUTABLE
-        } or PendingIntent.FLAG_UPDATE_CURRENT
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        }
 
         val title = downloadItemState.name
 
