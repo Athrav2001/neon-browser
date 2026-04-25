@@ -2,7 +2,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
@@ -65,3 +65,15 @@ jobs:
           path: ./app/build/outputs/apk/release/*universal*.apk
           name: app-android-universal-release
           if-no-files-found: error
+
+      - name: Create GitHub Release and upload APKs
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: main-build-${{ github.run_number }}
+          name: Main Build ${{ github.run_number }}
+          generate_release_notes: true
+          prerelease: true
+          files: |
+            ./app/build/outputs/apk/release/*arm64-v8a*.apk
+            ./app/build/outputs/apk/release/*armeabi-v7a*.apk
+            ./app/build/outputs/apk/release/*universal*.apk
