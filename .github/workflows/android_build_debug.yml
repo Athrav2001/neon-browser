@@ -17,12 +17,9 @@ jobs:
       - name: Set up JBR
         uses: actions/setup-java@v4
         with:
-          distribution: "jetbrains"
-          java-package: "jdk"
+          distribution: "temurin"
           java-version: "21"
-          check-latest: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          check-latest: false
 
       - name: Set up Gradle (with cache)
         uses: gradle/actions/setup-gradle@v4
