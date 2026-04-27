@@ -1,9 +1,0 @@
-package com.neo.downloader.shared.ui.widget
-
-@Suppress("unused")
-sealed class MessageDialogType {
-    data object Success : MessageDialogType()
-    data object Info : MessageDialogType()
-    data object Error : MessageDialogType()
-    data object Warning : MessageDialogType()
-}

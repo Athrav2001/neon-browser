@@ -20,11 +20,7 @@ val fallBackVersion = "$defaultSemVersion-untagged"
 gitVersion {
     on {
         branch(".+") {
-            val safeBranch = it.refInfo.shortenName
-                .replace(Regex("[^0-9A-Za-z-]"), "-")
-                .trim('-')
-                .ifEmpty { "branch" }
-            "$defaultSemVersion-$safeBranch-snapshot"
+            "$defaultSemVersion-${it.refInfo.shortenName}-snapshot"
         }
         tag("v?${semanticVersionRegex}") {
             it.matchResult.groups.get("version")!!.value
