@@ -16,18 +16,4 @@ dependencyResolutionManagement {
 rootProject.name = "NeoDownloader"
 
 include("app")
-include("downloader:core")
-include("downloader:monitor")
-include("shared:utils")
-include("shared:app")
-include("shared:compose-utils")
-include("shared:resources")
-include("shared:resources:contracts")
-include("shared:config")
-include("shared:updater")
-include("shared:auto-start")
-include("shared:nanohttp4k")
-includeBuild("./compositeBuilds/shared"){
-    name="build-shared"
-}
 includeBuild("./compositeBuilds/plugins")
