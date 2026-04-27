@@ -11,14 +11,23 @@ class AdBlocker {
     ): Boolean {
         if (isMainFrame) return false
         val requestHost = requestUrl.toHost() ?: return false
+        val requestHostNoWww = requestHost.removePrefix("www.")
+        val pageHostNoWww = pageUrl?.toHost()?.removePrefix("www.")
+
+        // Never block first-party resources; this prevents page/video/image load deadlocks.
+        if (pageHostNoWww != null && pageHostNoWww == requestHostNoWww) {
+            return false
+        }
+
         if (hostInSetOrParent(requestHost, alwaysBlockedHosts)) {
             return true
         }
-        if (hostInSetOrParent(requestHost, dynamicHosts)) {
+
+        // Apply downloaded host lists only when we can confirm third-party context.
+        if (pageHostNoWww != null && hostInSetOrParent(requestHost, dynamicHosts)) {
             return true
         }
-        val requestHostNoWww = requestHost.removePrefix("www.")
-        val pageHostNoWww = pageUrl?.toHost()?.removePrefix("www.")
+
         val isThirdParty = pageHostNoWww != null && pageHostNoWww != requestHostNoWww
         val normalizedUrl = requestUrl.lowercase(Locale.US)
         return isThirdParty && adUrlMarkers.any { marker -> marker in normalizedUrl }

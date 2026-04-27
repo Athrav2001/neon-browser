@@ -201,6 +201,8 @@ class NDMWebViewClient(
                 return super.shouldInterceptRequest(view, request)
             }
             val pageUrlFromHeaders = request.requestHeaders["Referer"]
+                ?: view?.url
+                ?: (view as? NDMWebView)?.openedBy
             if (isCriticalBrowsingRequest(request.url.toString(), pageUrlFromHeaders)) {
                 return super.shouldInterceptRequest(view, request)
             }
