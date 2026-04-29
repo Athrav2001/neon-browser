@@ -757,10 +757,22 @@ private fun YouTubeDownloadDialog(
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(8.dp))
+                fun normalizeYouTubeUrl(input: String): String {
+                    val trimmed = input.trim()
+                    if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) return trimmed
+                    return when {
+                        trimmed.startsWith("www.youtube.com/") -> "https://$trimmed"
+                        trimmed.startsWith("youtube.com/") -> "https://www.$trimmed"
+                        trimmed.startsWith("youtu.be/") -> "https://$trimmed"
+                        trimmed.startsWith("watch?") || trimmed.startsWith("shorts/") -> "https://www.youtube.com/$trimmed"
+                        trimmed.startsWith("v=") || trimmed.startsWith("list=") -> "https://www.youtube.com/watch?$trimmed"
+                        else -> trimmed
+                    }
+                }
                 ActionButton(
                     text = if (isLoading) "Loading..." else "Fetch Qualities",
                     onClick = {
-                        val sanitizedUrl = youTubeUrl.trim()
+                        val sanitizedUrl = normalizeYouTubeUrl(youTubeUrl)
                         if (sanitizedUrl.isBlank()) return@ActionButton
                         resolvedYouTubeUrl = sanitizedUrl
                         fetchError = null
