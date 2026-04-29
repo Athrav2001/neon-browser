@@ -424,9 +424,12 @@ class BrowserComponent(
 
     fun downloadYouTube(url: String, formatId: String) {
         scope.launch {
-            // TODO: use YtDlpManager to get direct download URL for formatId
-            val directUrl = YtDlpManager.getDownloadUrl(url, formatId).getOrNull() ?: url
-            downloadGrabberUrls(listOf(directUrl))
+            YtDlpManager.getDownloadUrl(url, formatId).onSuccess { directUrl ->
+                downloadGrabberUrls(listOf(directUrl))
+            }.onFailure { e ->
+                Log.e("BrowserComponent", "Failed to get download URL", e)
+                // TODO: show toast or notification
+            }
         }
     }
 

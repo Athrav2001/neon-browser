@@ -2,14 +2,18 @@ package com.neo.downloader.android.ytdlp
 
 import android.content.Context
 import android.util.Log
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import com.arthenica.ffmpegkit.FFmpegKit
+import com.arthenica.ffmpegkit.ReturnCode
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import org.json.JSONArray
+import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 object YtDlpManager {
     private const val TAG = "YtDlpManager"
@@ -34,13 +38,13 @@ object YtDlpManager {
         if (ytDlpPath.exists()) {
             ytDlpPath.setExecutable(true)
         }
-        // Python path - assume python3 is in PATH, or find it
+        // Find Python interpreter
         pythonPath = findPythonPath()
         initialized = true
     }
 
     private fun downloadYtDlp() {
-        // Download from GitHub releases (like ytdlnis-src)
+        // Download from GitHub releases (similar to ytdlnis-src)
         val url = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp"
         try {
             val request = Request.Builder().url(url).build()
@@ -51,6 +55,7 @@ object YtDlpManager {
                 input?.copyTo(output)
                 output.close()
                 input?.close()
+                ytDlpPath.setExecutable(true)
                 Log.d(TAG, "yt-dlp downloaded successfully")
             } else {
                 Log.e(TAG, "Failed to download yt-dlp: ${response.code}")
@@ -98,25 +103,38 @@ object YtDlpManager {
     private fun parseFormatsJson(jsonStr: String): List<FormatOption> {
         val list = mutableListOf<FormatOption>()
         try {
-            // Simple parsing: each line is a JSON object? Actually yt-dlp -J prints JSON array.
-            // We'll split by newline and parse each line as JSON object.
-            val lines = jsonStr.trim().split("\n")
-            for (line in lines) {
-                if (line.isBlank()) continue
-                // Try to parse as JSON object (assuming -J output)
-                // Actually -J prints JSON array of objects. We'll parse whole string as JSON array.
-                // But for simplicity, assume each line is a format object.
-                // Use org.json if available, else skip.
-                // For now, dummy data.
+            val arr = JSONArray(jsonStr.trim())
+            for (i in 0 until arr.length()) {
+                val obj = arr.getJSONObject(i)
+                val id = obj.optString("format_id", "")
+                val note = obj.optString("format_note", "")
+                val height = obj.optInt("height", 0)
+                val filesize = obj.optLong("filesize", -1L)
+                val filesizeApprox = obj.optLong("filesize_approx", -1L)
+                val size = when {
+                    filesize > 0 -> formatSize(filesize)
+                    filesizeApprox > 0 -> formatSize(filesizeApprox)
+                    else -> null
+                }
+                val quality = if (note.isNotEmpty()) note else if (height > 0) "${height}p" else "Unknown"
+                list.add(FormatOption(id, quality, size, null, null, null))
             }
-            // Dummy data (replace with actual parsing)
-            list.add(FormatOption("18", "360p", "30 MB", null, null, null))
-            list.add(FormatOption("22", "720p", "60 MB", null, null, null))
-            list.add(FormatOption("137", "1080p", "120 MB", null, null, null))
         } catch (e: Exception) {
             Log.e(TAG, "Failed to parse formats JSON", e)
         }
-        return list
+        return list.sortedByDescending { it.quality }.distinctBy { it.quality }
+    }
+
+    private fun formatSize(bytes: Long): String {
+        val kb = 1024.0
+        val mb = kb * 1024
+        val gb = mb * 1024
+        return when {
+            bytes >= gb -> String.format("%.1f GB", bytes / gb)
+            bytes >= mb -> String.format("%.1f MB", bytes / mb)
+            bytes >= kb -> String.format("%.0f KB", bytes / kb)
+            else -> "$bytes B"
+        }
     }
 
     suspend fun getDownloadUrl(url: String, formatId: String): Result<String> = withContext(Dispatchers.IO) {
@@ -140,6 +158,30 @@ object YtDlpManager {
             Log.e(TAG, "Error getting download URL", e)
             Result.failure(e)
         }
+    }
+
+    suspend fun downloadVideo(url: String, formatId: String, outputPath: String): Result<Boolean> = withContext(Dispatchers.IO) {
+        try {
+            val request = YTDLRequest(url).apply {
+                addOption("-f", formatId)
+                addOption("-o", outputPath)
+                // Add any other options like --no-playlist, etc.
+            }
+            val response = execute(request)
+            if (response.exitCode != 0) {
+                return@withContext Result.failure(Exception("yt-dlp exited with code ${response.exitCode}: ${response.err}"))
+            }
+            Result.success(true)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error downloading video", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun convertTsToMp4(tsPath: String, mp4Path: String): Boolean = withContext(Dispatchers.IO) {
+        val command = "-i $tsPath -c copy $mp4Path"
+        val session = FFmpegKit.execute(command)
+        return ReturnCode.isSuccess(session.returnCode)
     }
 
     private suspend fun execute(request: YTDLRequest): ExecutionResult = withContext(Dispatchers.IO) {
