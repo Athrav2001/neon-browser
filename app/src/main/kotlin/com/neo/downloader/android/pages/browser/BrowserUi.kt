@@ -78,6 +78,7 @@ import com.neo.downloader.shared.ui.widget.Text
 import com.neo.downloader.shared.ui.widget.TransparentIconActionButton
 import com.neo.downloader.shared.util.ClipboardUtil
 import com.neo.downloader.shared.util.ResponsiveDialog
+import kotlinx.coroutines.launch
 import com.neo.downloader.shared.util.div
 import com.neo.downloader.shared.util.rememberResponsiveDialogState
 import com.neo.downloader.shared.util.ui.LocalContentColor
