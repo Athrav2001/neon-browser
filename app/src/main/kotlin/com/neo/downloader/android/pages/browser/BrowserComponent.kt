@@ -42,6 +42,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.serialization.json.Json
 import java.util.UUID
 import kotlin.text.orEmpty
+import com.neo.downloader.android.ytdlp.YtDlpManager
 
 class BrowserComponent(
     componentContext: ComponentContext,
@@ -61,6 +62,16 @@ class BrowserComponent(
     val showGrabberSheet = _showGrabberSheet.asStateFlow()
     private val _showGrabberDownloadAllSheet = MutableStateFlow(false)
     val showGrabberDownloadAllSheet = _showGrabberDownloadAllSheet.asStateFlow()
+    private val _showYouTubeDialog = MutableStateFlow(false)
+    val showYouTubeDialog = _showYouTubeDialog.asStateFlow()
+    fun openYouTubeDownload() {
+        YtDlpManager.init(context)
+        _showYouTubeDialog.value = true
+        closeMainMenu()
+    }
+    fun closeYouTubeDialog() {
+        _showYouTubeDialog.value = false
+    }
 
     val downloadInterceptor = DownloadInterceptor(
         scope, {
@@ -133,6 +144,7 @@ class BrowserComponent(
                     }
                 }
                 +createOpenGrabberAction()
+                +createYouTubeDownloadAction()
                 +createToggleAdBlockAction()
                 if (url != null) {
                     if (isBookmarked(url)) {
@@ -410,6 +422,14 @@ class BrowserComponent(
         )
     }
 
+    fun downloadYouTube(url: String, formatId: String) {
+        scope.launch {
+            // TODO: use YtDlpManager to get direct download URL for formatId
+            val directUrl = YtDlpManager.getDownloadUrl(url, formatId).getOrNull() ?: url
+            downloadGrabberUrls(listOf(directUrl))
+        }
+    }
+
     fun getEffectiveUserAgent(): String? {
         return appSettingsStorage.userAgent.value.takeIf { it.isNotBlank() }
     }
@@ -640,6 +660,15 @@ class BrowserComponent(
             icon = MyIcons.download,
         ) {
             openGrabber()
+        }
+    }
+
+    fun createYouTubeDownloadAction(): AnAction {
+        return simpleAction(
+            title = "YouTube Download".asStringSource(),
+            icon = MyIcons.download, // TODO: replace with YouTube icon if available
+        ) {
+            openYouTubeDownload()
         }
     }
 

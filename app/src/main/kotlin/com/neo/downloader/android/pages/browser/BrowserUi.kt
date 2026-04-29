@@ -94,6 +94,8 @@ import ir.neo.util.compose.resources.myStringResource
 import ir.neo.util.ifThen
 import java.net.URI
 import java.util.Locale
+import com.neo.downloader.android.ytdlp.FormatOption
+import com.neo.downloader.android.ytdlp.YtDlpManager
 
 @Composable
 fun BrowserPage(
@@ -261,6 +263,16 @@ fun BrowserPage(
             browserComponent.closeGrabber()
         },
     )
+
+    val showYouTubeDialog by browserComponent.showYouTubeDialog.collectAsState()
+    if (showYouTubeDialog) {
+        YouTubeDownloadDialog(
+            onDismiss = browserComponent::closeYouTubeDialog,
+            onDownload = { url, formatId ->
+                browserComponent.downloadYouTube(url, formatId)
+            }
+        )
+    }
 
     RenderMenuInSheet(
         browserComponent.contextMenu.collectAsState().value,
@@ -702,6 +714,79 @@ private fun GrabberBulkDownloadSheet(
                         Spacer(Modifier.width(mySpacings.smallSpace))
                     }
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun YouTubeDownloadDialog(
+    onDismiss: () -> Unit,
+    onDownload: (url: String, formatId: String) -> Unit,
+) {
+    var youTubeUrl by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
+    var formats by remember { mutableStateOf<List<FormatOption>>(emptyList()) }
+    val scope = rememberCoroutineScope()
+
+    ResponsiveDialog(
+        state = rememberResponsiveDialogState(true),
+        onDismiss = onDismiss,
+    ) {
+        SheetUI(
+            header = {
+                SheetHeader(
+                    headerTitle = { SheetTitle("YouTube Download") },
+                    headerActions = {
+                        TransparentIconActionButton(
+                            MyIcons.close,
+                            Res.string.close.asStringSource(),
+                        ) { onDismiss() }
+                    }
+                )
+            }
+        ) {
+            Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                MyTextField(
+                    text = youTubeUrl,
+                    onTextChange = { youTubeUrl = it },
+                    placeholder = "Paste YouTube link here",
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(8.dp))
+                ActionButton(
+                    text = if (isLoading) "Loading..." else "Fetch Qualities",
+                    onClick = {
+                        isLoading = true
+                        scope.launch {
+                            YtDlpManager.getFormats(youTubeUrl).onSuccess { fetchedFormats ->
+                                formats = fetchedFormats
+                            }.onFailure { e ->
+                                // TODO: show error message
+                                e.printStackTrace()
+                            }
+                            isLoading = false
+                        }
+                    },
+                    enabled = youTubeUrl.isNotBlank() && !isLoading,
+                )
+                Spacer(Modifier.height(8.dp))
+                if (formats.isNotEmpty()) {
+                    LazyColumn {
+                        items(formats) { format ->
+                            Row(
+                                Modifier.fillMaxWidth().clickable {
+                                    onDownload(youTubeUrl, format.id)
+                                }.padding(vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(format.quality)
+                                Spacer(Modifier.weight(1f))
+                                Text(format.size ?: "")
+                            }
+                        }
+                    }
+                }
             }
         }
     }
