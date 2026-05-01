@@ -37,8 +37,8 @@ fun defaultAdBlockSources(): List<AdBlockFilterSource> {
         ),
         AdBlockFilterSource(
             id = "adguard_dns",
-            name = "AdGuard DNS Hosts",
-            url = "https://raw.githubusercontent.com/AdguardTeam/AdguardHome/master/client/src/filters/optimized/filter_15.txt",
+            name = "AdGuard DNS filter",
+            url = "https://adguardteam.github.io/AdGuardSDNSFilter/Filters/filter.txt",
             enabled = true,
         ),
     )
